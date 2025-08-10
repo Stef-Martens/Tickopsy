@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsc"
+    "build": "tsc",
+    "build:database": "cd '../../packages/database' && npm run build"
   },
   "keywords": [],
   "author": "",

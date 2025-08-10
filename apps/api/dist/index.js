@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const database_1 = require("@repo/database");
+const database_1 = __importDefault(require("@repo/database"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 4000;
@@ -18,7 +18,7 @@ app.get("/", (req, res) => {
 // Example route to get all accounts
 app.get("/accounts", async (req, res) => {
     try {
-        const accounts = await database_1.prisma.account.findMany();
+        const accounts = await database_1.default.account.findMany();
         res.json(accounts);
     }
     catch (error) {
