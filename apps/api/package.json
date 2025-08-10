@@ -21,7 +21,6 @@
     "yn": "^3.1.1"
   },
   "dependencies": {
-    "@repo/database": "file:../../../../packages/database",
     "@stef_martens/database-tickopsy": "^1.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
