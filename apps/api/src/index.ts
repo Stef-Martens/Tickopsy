@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
-import prisma from "@repo/database";
+import prisma from "@stef_martens/database-tickopsy";
 
 dotenv.config();
 

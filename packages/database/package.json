@@ -1,5 +1,5 @@
 {
-  "name": "@repo/database",
+  "name": "@stef_martens/database-tickopsy",
   "version": "1.0.0",
   "main": "./dist/client.js",
   "types": "./dist/client.d.ts",
@@ -10,6 +10,13 @@
       "require": "./dist/client.js"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "prisma"
+  ],
   "scripts": {
     "build": "tsup src/client.ts --format cjs --dts --external ../generated/client",
     "db:migrate:deploy": "prisma migrate deploy",
