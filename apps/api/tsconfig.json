@@ -10,10 +10,6 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "baseUrl": ".",
-    "paths": {
-      "@repo/database": ["../../packages/database/dist"],
-      "@repo/database/*": ["../../packages/database/dist/*"]
-    }
   },
   "include": ["src"]
 }
