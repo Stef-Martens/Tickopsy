@@ -1,19 +1,163 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
-  output = "../generated/client"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Account {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String
+  imageUrl  String?  @map("image_url")
+  stripeId  String?  @map("stripe_id")
+  plan      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users         User[]
+  customers     Customer[]
+  tickets       Ticket[]
+  subscriptions Subscription[]
+  todos         Todo[]
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
+  id        String   @id @default(cuid())
+  accountId String?  @map("account_id")
+  name      String
+  email     String
+  password  String
+  role      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  account Account? @relation(fields: [accountId], references: [id])
+
+  ticketsCreated        Ticket[]              @relation("TicketsCreated")
+  notifications         Notification[]
+  todos                 Todo[]
+  reminders             Reminder[]
+  ticketStatusHistories TicketStatusHistory[] @relation("StatusChangedBy")
+
+  @@unique([accountId, email])
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  accountId String    @map("account_id")
+  name      String
+  email     String
+  phone     String
+  imageUrl  String?   @map("image_url")
+  notes     String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  account Account  @relation(fields: [accountId], references: [id])
+  tickets Ticket[]
+
+  @@unique([accountId, email])
+  @@index([accountId, name])
+}
+
+model Ticket {
+  id          String    @id @default(cuid())
+  accountId   String    @map("account_id")
+  customerId  String?   @map("customer_id")
+  createdById String    @map("created_by_id")
+  description String
+  status      String
+  dueDate     DateTime? @map("due_date")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  account             Account               @relation(fields: [accountId], references: [id])
+  customer            Customer?             @relation(fields: [customerId], references: [id])
+  creator             User                  @relation("TicketsCreated", fields: [createdById], references: [id])
+  notifications       Notification[]
+  reminders           Reminder[]
+  ticketStatusHistory TicketStatusHistory[]
+
+  @@index([accountId, status])
+  @@index([accountId, createdAt])
+}
+
+model TicketStatusHistory {
+  id          String   @id @default(cuid())
+  ticketId    String   @map("ticket_id")
+  status      String
+  changedById String   @map("changed_by_id")
+  changedAt   DateTime @default(now()) @map("changed_at")
+
+  ticket    Ticket @relation(fields: [ticketId], references: [id])
+  changedBy User   @relation("StatusChangedBy", fields: [changedById], references: [id])
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  accountId String   @map("account_id")
+  stripeId  String   @map("stripe_id")
+  plan      String
+  status    String
+  startedAt DateTime @map("started_at")
+  expiresAt DateTime @map("expires_at")
+
+  account Account @relation(fields: [accountId], references: [id])
+}
+
+model Notification {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  ticketId     String    @map("ticket_id")
+  message      String
+  channel      String
+  sentAt       DateTime? @map("sent_at")
+  deliveredAt  DateTime? @map("delivered_at")
+  failedAt     DateTime? @map("failed_at")
+  errorMessage String?   @map("error_message")
+
+  user   User   @relation(fields: [userId], references: [id])
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+}
+
+model Todo {
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  accountId      String    @map("account_id")
+  note           String
+  status         String
+  createdAt      DateTime  @default(now()) @map("created_at")
+  lastModifiedAt DateTime  @updatedAt @map("last_modified_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  user     User       @relation(fields: [userId], references: [id])
+  account  Account    @relation(fields: [accountId], references: [id])
+  Reminder Reminder[]
+
+  @@index([accountId, status])
+}
+
+model Reminder {
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  todoId         String?   @map("todo_id")
+  ticketId       String?   @map("ticket_id")
+  message        String
+  remindAt       DateTime  @map("remind_at")
+  channel        String
+  repeatInterval String?   @map("repeat_interval")
+  repeatUntil    DateTime? @map("repeat_until")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  user   User    @relation(fields: [userId], references: [id])
+  todo   Todo?   @relation(fields: [todoId], references: [id])
+  ticket Ticket? @relation(fields: [ticketId], references: [id])
 }
