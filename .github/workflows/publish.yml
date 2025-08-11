@@ -23,12 +23,17 @@ jobs:
         run: |
           cd packages/database
           npm ci
+          npm run generate
           npm run build
 
-      - name: Bump version and publish
+      - name: Bump version
+        run: |
+          cd packages/database
+          npm version patch
+
+      - name: Publish package
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           cd packages/database
-          npm version patch
           npm publish
