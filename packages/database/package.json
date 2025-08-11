@@ -1,6 +1,6 @@
 {
   "name": "@stef_martens/database-tickopsy",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "./dist/client.js",
   "types": "./dist/client.d.ts",
   "module": "./dist/client.js",
