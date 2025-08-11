@@ -1,4 +1,4 @@
-name: Publish Database Package
+name: Deploy Backend and Frontend
 
 on:
   push:
@@ -6,9 +6,10 @@ on:
       - main
 
 jobs:
-  publish:
+  backend:
     runs-on: ubuntu-latest
-
+    outputs:
+      backend_status: ${{ steps.publish.outcome }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -22,26 +23,50 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Install dependencies & build
+      - name: Install dependencies & build backend package
         run: |
           cd packages/database
           npm ci
           npm run generate
           npm run build
 
-      - name: Bump version
+      - name: Bump version and push
         run: |
           cd packages/database
           npm version patch
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json 
+          git add package.json
           git commit -m "chore: bump database package version"
-          git push origin HEAD:dev --follow-tags
+          git push origin HEAD:main --follow-tags
 
-      - name: Publish package
+      - name: Publish backend package
+        id: publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           cd packages/database
           npm publish
+
+  frontend:
+    needs: backend
+    runs-on: ubuntu-latest
+    if: needs.backend.outputs.backend_status == 'success'
+    steps:
+      - name: Checkout frontend code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy Frontend to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          cd apps/web
+          vercel --prod --confirm --token $VERCEL_TOKEN
