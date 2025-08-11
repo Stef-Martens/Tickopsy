@@ -15,7 +15,8 @@
   },
   "files": [
     "dist",
-    "prisma"
+    "prisma",
+    "generated"
   ],
   "scripts": {
     "build": "tsup src/client.ts --format cjs --dts --external ../generated/client",
