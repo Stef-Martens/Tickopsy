@@ -31,15 +31,15 @@ model Account {
 
 model User {
   id        String   @id @default(cuid())
+  authId    String   @unique // Supabase auth.users.id
   accountId String?  @map("account_id")
   name      String
   email     String
-  password  String
+  phone     String?
   role      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  account Account? @relation(fields: [accountId], references: [id])
-
+  account               Account?              @relation(fields: [accountId], references: [id])
   ticketsCreated        Ticket[]              @relation("TicketsCreated")
   notifications         Notification[]
   todos                 Todo[]
