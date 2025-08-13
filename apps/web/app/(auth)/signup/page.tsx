@@ -3,8 +3,10 @@ import { SignUpForm } from "@/components/signup/sign-up-form";
 
 const SignUpPage = () => {
   return (
-    <div className="flex h-svh items-center">
-      <SignUpForm />
+    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <SignUpForm />
+      </div>
     </div>
   );
 };

@@ -86,3 +86,37 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
     next(err);
   }
 }
+
+// Forgot Password
+export async function forgotPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { email } = req.body;
+
+    // Basic validation
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    if (!email.includes("@")) {
+      return res.status(400).json({ error: "Invalid email address" });
+    }
+
+    // Ask Supabase to send a password reset email
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo:
+        process.env.RESET_PASSWORD_REDIRECT_URL ||
+        "http://localhost:3000/reset-password",
+    });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}

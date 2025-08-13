@@ -86,3 +86,23 @@ export async function signInWithGoogle() {
 
   redirect(data.url);
 }
+
+export async function forgotPassword({ email }: { email: string }) {
+  try {
+    const res = await fetch("http://localhost:4000/api/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      return { success: false, error: text };
+    }
+
+    return { success: true };
+  } catch {
+    return { success: false, error: "Something went wrong. Please try again." };
+  }
+}
