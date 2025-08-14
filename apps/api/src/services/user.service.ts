@@ -14,36 +14,36 @@ export function getUserById(id: string) {
   });
 }
 
-export async function createUser(data: {
-  accountId?: string;
-  name: string;
-  email: string;
-  password: string;
-  role: string;
-  phone?: string;
-}) {
-  // 1. Create user in Supabase Auth
-  const { data: authData, error } = await supabase.auth.signUp({
-    email: data.email,
-    password: data.password,
-  });
+// export async function createUser(data: {
+//   accountId?: string;
+//   name: string;
+//   email: string;
+//   password: string;
+//   role: string;
+//   phone?: string;
+// }) {
+//   // 1. Create user in Supabase Auth
+//   const { data: authData, error } = await supabase.auth.signUp({
+//     email: data.email,
+//     password: data.password,
+//   });
 
-  if (error || !authData.user) {
-    throw new Error(error?.message || "Supabase signUp failed");
-  }
+//   if (error || !authData.user) {
+//     throw new Error(error?.message || "Supabase signUp failed");
+//   }
 
-  // 2. Store in your own DB
-  return prisma.user.create({
-    data: {
-      accountId: data.accountId,
-      name: data.name,
-      email: data.email,
-      role: data.role,
-      phone: data.phone,
-      authId: authData.user.id,
-    },
-  });
-}
+//   // 2. Store in your own DB
+//   return prisma.user.create({
+//     data: {
+//       accountId: data.accountId,
+//       name: data.name,
+//       email: data.email,
+//       role: data.role,
+//       phone: data.phone,
+//       authId: authData.user.id,
+//     },
+//   });
+// }
 
 export async function updateUser(
   id: string,
