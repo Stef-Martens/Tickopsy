@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { BillingToggle } from "./ui/billing-toggle";
 
 interface PricingFeature {
@@ -23,12 +22,21 @@ interface PricingPlan {
   id: string;
   name: string;
   description: string;
-  monthlyPrice: string;
-  yearlyPrice: string;
+  billing: {
+    monthly: {
+      displayPrice: string;
+      stripePriceId: string | null;
+      paymentUrl: string;
+    };
+    yearly: {
+      displayPrice: string;
+      stripePriceId: string | null;
+      paymentUrl: string;
+    };
+  };
   features: PricingFeature[];
   button: {
     text: string;
-    url: string;
   };
   comingSoon?: boolean;
 }
@@ -39,69 +47,100 @@ interface PricingSectionProps {
   plans?: PricingPlan[];
 }
 
+export const plans = [
+  {
+    id: "basic",
+    name: "Basic",
+    description: "For small shops getting started and want to stay organized",
+    billing: {
+      monthly: {
+        displayPrice: "€24,99",
+        stripePriceId: "price_1Rw1ue4eLBjiZOJYONXFwAvN",
+        paymentUrl:
+          "https://buy.stripe.com/test_9B6aEQfod3687GSdcV8EM00" +
+          "?prefilled_email=" +
+          "stef.m@hotmail.be",
+      },
+      yearly: {
+        displayPrice: "€239,99",
+        stripePriceId: "price_1Rw4OD4eLBjiZOJYvW56xKBy",
+        paymentUrl: "https://buy.stripe.com/test_eVq4gsa3TbCEf9kgp78EM05",
+      },
+    },
+    features: [
+      { text: "Digital job check-in form" },
+      { text: "Job dashboard with statuses" },
+      { text: "Update status manually or via QR scan (optional)" },
+      { text: "Customer notifications (SMS/email)" },
+      { text: "Simple filters (date, status, etc.)" },
+      { text: "Optional QR sticker generation (paid add-on)" },
+    ],
+    button: {
+      text: "Start Free Trial",
+    },
+  },
+  {
+    id: "pro-solo",
+    name: "Pro Solo",
+    description: "For single operators who want customization & insights",
+    billing: {
+      monthly: {
+        displayPrice: "€49,99",
+        stripePriceId: "price_1Rw1v54eLBjiZOJYCsqQxEit",
+        paymentUrl: "https://buy.stripe.com/test_4gM3codg5ayA5yKgp78EM01",
+      },
+      yearly: {
+        displayPrice: "€479,99",
+        stripePriceId: "price_1Rw4PY4eLBjiZOJYEa1K3SM1",
+        paymentUrl: "https://buy.stripe.com/test_9B6dR2gsh6ik0eq1ud8EM04",
+      },
+    },
+    features: [
+      { text: "All Basic features" },
+      { text: "Customizable UI layout & widgets" },
+      { text: "Advanced analytics & reports" },
+      { text: "Unlimited ticket history search" },
+      { text: "Priority email support" },
+    ],
+    button: {
+      text: "Purchase",
+    },
+  },
+  {
+    id: "pro-team",
+    name: "Pro Team",
+    description: "For teams that need collaboration & delegation",
+    billing: {
+      monthly: {
+        displayPrice: "Coming Soon",
+        stripePriceId: null,
+        paymentUrl: "#",
+      },
+      yearly: {
+        displayPrice: "Coming Soon",
+        stripePriceId: null,
+        paymentUrl: "#",
+      },
+    },
+    features: [
+      { text: "All Pro Solo features" },
+      { text: "Assign todos & reminders to team members" },
+      { text: "Multiple user accounts with one admin" },
+      { text: "Role-based permissions" },
+      { text: "Shared customer database" },
+      { text: "Team activity tracking & productivity insights" },
+      { text: "More features to come" },
+    ],
+    comingSoon: true,
+    button: {
+      text: "Coming Soon",
+    },
+  },
+];
+
 const PricingSection = ({
   heading = "Pricing",
   description = "Choose the plan that fits your business",
-  plans = [
-    {
-      id: "basic",
-      name: "Basic",
-      description: "For small shops getting started and want to stay organized",
-      monthlyPrice: "€24,99",
-      yearlyPrice: "€239,99",
-      features: [
-        { text: "Digital job check-in form" },
-        { text: "Job dashboard with statuses" },
-        { text: "Update status manually or via QR scan (optional)" },
-        { text: "Customer notifications (SMS/email)" },
-        { text: "Simple filters (date, status, etc.)" },
-        { text: "Optional QR sticker generation (paid add-on)" },
-      ],
-      button: {
-        text: "Start Free Trial",
-        url: "#",
-      },
-    },
-    {
-      id: "pro-solo",
-      name: "Pro Solo",
-      description: "For single operators who want customization & insights",
-      monthlyPrice: "€49,99",
-      yearlyPrice: "€479,99",
-      features: [
-        { text: "All Basic features" },
-        { text: "Customizable UI layout & widgets" },
-        { text: "Advanced analytics & reports" },
-        { text: "Unlimited ticket history search" },
-        { text: "Priority email support" },
-      ],
-      button: {
-        text: "Purchase",
-        url: "#",
-      },
-    },
-    {
-      id: "pro-team",
-      name: "Pro Team",
-      description: "For teams that need collaboration & delegation",
-      monthlyPrice: "Coming Soon",
-      yearlyPrice: "Coming Soon",
-      features: [
-        { text: "All Pro Solo features" },
-        { text: "Assign todos & reminders to team members" },
-        { text: "Multiple user accounts with one admin" },
-        { text: "Role-based permissions" },
-        { text: "Shared customer database" },
-        { text: "Team activity tracking & productivity insights" },
-        { text: "More features to come" },
-      ],
-      button: {
-        text: "Coming Soon",
-        url: "#",
-      },
-      comingSoon: true,
-    },
-  ],
 }: PricingSectionProps) => {
   const [isYearly, setIsYearly] = useState(false);
   return (
@@ -139,7 +178,9 @@ const PricingSection = ({
                     ) : (
                       <>
                         <span className="text-4xl font-semibold">
-                          {isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                          {isYearly
+                            ? plan.billing.yearly.displayPrice
+                            : plan.billing.monthly.displayPrice}
                         </span>
                         <span className="text-2xl font-semibold text-muted-foreground">
                           {isYearly ? "/yr" : "/mo"}
@@ -164,7 +205,13 @@ const PricingSection = ({
                 </CardContent>
                 <CardFooter className="mt-auto">
                   <Button asChild className="w-full" disabled={plan.comingSoon}>
-                    <a href={plan.button.url}>{plan.button.text}</a>
+                    <a
+                      href={
+                        plan.billing[isYearly ? "yearly" : "monthly"].paymentUrl
+                      }
+                    >
+                      {plan.button.text}
+                    </a>
                   </Button>
                 </CardFooter>
               </Card>
