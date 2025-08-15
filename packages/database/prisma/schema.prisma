@@ -104,7 +104,7 @@ model TicketStatusHistory {
 model Subscription {
   id        String   @id @default(cuid())
   accountId String   @map("account_id")
-  stripeId  String   @map("stripe_id")
+  stripeId  String   @unique @map("stripe_id")
   plan      String
   status    String
   startedAt DateTime @map("started_at")

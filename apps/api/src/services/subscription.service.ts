@@ -1,23 +1,25 @@
 import prisma from "@stef_martens/database-tickopsy";
 
 export async function updateSubscription({
-  customerId,
   subscriptionId,
   email,
   status,
   plan,
+  expiresAt,
 }: {
   customerId: string;
   subscriptionId: string;
   email?: string;
   status: string;
   plan: string;
+  expiresAt: string | number | Date;
 }) {
   const user = await prisma.user.findFirst({ where: { email } });
   if (!user) throw new Error("User not found");
+  const accountId = user.accountId; // assuming user has an accountId field
 
-  prisma.subscription.upsert({
-    where: { stripeId: stripeSubscriptionId }, // your webhook stripe subscription id
+  await prisma.subscription.upsert({
+    where: { id: subscriptionId }, // use the unique subscription id
     update: {
       plan,
       status,
@@ -26,7 +28,7 @@ export async function updateSubscription({
     },
     create: {
       accountId, // get the account linked to the Stripe customer
-      stripeId: stripeSubscriptionId,
+      stripeId: subscriptionId,
       plan,
       status,
       startedAt: new Date(),

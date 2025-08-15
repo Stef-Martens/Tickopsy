@@ -54,7 +54,6 @@ export async function signupUser({
       name: `${name}'s Account`,
       email,
       phone: "",
-      plan: "free",
     },
   });
 
