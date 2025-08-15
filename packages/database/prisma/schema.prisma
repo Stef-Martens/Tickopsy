@@ -13,14 +13,14 @@ datasource db {
 }
 
 model Account {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
-  email     String   @unique
+  email     String    @unique
   phone     String
-  imageUrl  String?  @map("image_url")
-  stripeId  String?  @map("stripe_id")
-  plan      String
-  createdAt DateTime @default(now()) @map("created_at")
+  imageUrl  String?   @map("image_url")
+  stripeId  String?   @map("stripe_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
 
   users         User[]
   customers     Customer[]
@@ -31,15 +31,15 @@ model Account {
 
 model User {
   id        String   @id @default(cuid())
-  accountId String?  @map("account_id")
+  authId    String   @unique // Supabase auth.users.id
+  accountId String   @map("account_id")
   name      String
   email     String
-  password  String
+  phone     String?
   role      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  account Account? @relation(fields: [accountId], references: [id])
-
+  account               Account               @relation(fields: [accountId], references: [id])
   ticketsCreated        Ticket[]              @relation("TicketsCreated")
   notifications         Notification[]
   todos                 Todo[]

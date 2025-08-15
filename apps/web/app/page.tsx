@@ -1,22 +1,11 @@
-"use client";
+// just a basic page with p tag
 
-import { useEffect, useState } from "react";
+import { PricingSection } from "@/components/pricing-section";
 
-export default function IndexPage() {
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    fetch("https://tickopsy-production.up.railway.app/accounts")
-      .then((res) => res.json())
-      .then(setUsers);
-  }, []);
-
+export default function Home() {
   return (
-    <div>
-      <h1>Hello World</h1>
-      <pre>{JSON.stringify(users, null, 2)}</pre>
-    </div>
+    <main>
+      <PricingSection />
+    </main>
   );
 }
-
-// test
