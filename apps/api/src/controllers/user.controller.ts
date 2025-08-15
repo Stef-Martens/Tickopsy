@@ -27,19 +27,6 @@ export async function getUserById(
   }
 }
 
-export async function createUser(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    const user = await userService.createUser(req.body);
-    res.status(201).json(user);
-  } catch (error) {
-    next(error);
-  }
-}
-
 export async function updateUser(
   req: Request,
   res: Response,

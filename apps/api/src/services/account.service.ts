@@ -49,5 +49,8 @@ export function updateAccount(
 }
 
 export function deleteAccount(id: string) {
-  return prisma.account.delete({ where: { id } });
+  return prisma.account.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
 }

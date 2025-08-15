@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "../utils/supabase/server";
@@ -13,7 +12,8 @@ export async function login({
   password: string;
 }) {
   try {
-    const res = await fetch("/api/login", {
+    console.log("Attempting login for:", email);
+    const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -22,38 +22,31 @@ export async function login({
     const data = await res.json();
 
     if (!res.ok) {
+      console.error("Login failed:", data.error || "Unknown error");
       return { success: false, error: data.error || "Login failed" };
     }
 
+    console.log("Login successful for:", email);
     return { success: true, data };
-  } catch {
+  } catch (error) {
+    console.error("Login error:", error);
     return { success: false, error: "Something went wrong" };
   }
 }
 
 export async function signup(formData: FormData) {
-  const firstName = formData.get("first-name") as string;
-  const lastName = formData.get("last-name") as string;
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-
-  const res = await fetch("http://localhost:4000/api/signup", {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: `${firstName} ${lastName}`,
-      email,
-      password,
-      role: "user",
+      name: formData.get("first-name") + " " + formData.get("last-name"),
+      email: formData.get("email"),
+      password: formData.get("password"),
     }),
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    return { success: false, error: text };
-  }
-
-  return { success: true };
+  const data = await res.json();
+  return { success: res.ok, error: data.error };
 }
 
 export async function signout() {
@@ -89,11 +82,14 @@ export async function signInWithGoogle() {
 
 export async function forgotPassword({ email }: { email: string }) {
   try {
-    const res = await fetch("http://localhost:4000/api/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
+    const res = await fetch(
+      process.env.NEXT_PUBLIC_API_URL + "/forgot-password",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      }
+    );
 
     const text = await res.text();
 
