@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { updateSubscription } from "src/services/subscription.service";
+import * as authService from "..//services/subscription.service";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -36,7 +36,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
       try {
         // Your service updates the DB
-        await updateSubscription({
+        await authService.updateSubscription({
           customerId,
           subscriptionId,
           email: email ?? undefined,
