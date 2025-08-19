@@ -14,7 +14,7 @@ export async function signupUser({
   name,
   email,
   password,
-  role = "user",
+  role = "ADMIN",
 }: {
   name: string;
   email: string;
@@ -48,7 +48,7 @@ export async function signupUser({
   }
 
   const account = await prisma.account.create({
-    data: { name: `${name}'s Account`, email, phone: "" },
+    data: { name: `${name}'s Account`, email, phone: "", hasAccess: false },
   });
 
   const newUser = await prisma.user.create({
