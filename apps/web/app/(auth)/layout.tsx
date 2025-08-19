@@ -5,7 +5,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import { useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
-export default function DashboardLayout({
+export default function AuthLayout({
   children,
   session,
 }: {
