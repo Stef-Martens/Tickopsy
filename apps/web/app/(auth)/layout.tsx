@@ -3,14 +3,11 @@
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useState } from "react";
-import type { Session } from "@supabase/supabase-js";
 
 export default function AuthLayout({
   children,
-  session,
 }: {
   children: React.ReactNode;
-  session: Session | null;
 }) {
   const [supabase] = useState(() =>
     createBrowserClient(
@@ -20,7 +17,7 @@ export default function AuthLayout({
   );
 
   return (
-    <SessionContextProvider supabaseClient={supabase} initialSession={session}>
+    <SessionContextProvider supabaseClient={supabase}>
       {children}
     </SessionContextProvider>
   );
