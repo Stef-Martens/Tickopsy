@@ -1,30 +1,22 @@
 import { Request, Response, NextFunction } from "express";
 import * as authService from "../services/auth.service";
+import { AppError } from "../services/error.service";
 
 export async function signup(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await authService.signupUser(req.body);
-    res.status(201).json({ user });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function login(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = await authService.loginUser(req.body);
-    res.json(data);
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function logout(req: Request, res: Response, next: NextFunction) {
-  try {
-    await authService.logoutUser();
-    res.status(204).send();
-  } catch (err) {
-    next(err);
+    const { name, email, password } = req.body;
+    const result = await authService.signupUser({ name, email, password });
+    res.status(200).json(result);
+  } catch (err: any) {
+    if (err instanceof AppError) {
+      return res
+        .status(err.status)
+        .json({ error: err.message, code: err.code });
+    }
+    console.error(err);
+    return res
+      .status(500)
+      .json({ error: "Internal server error", code: "INTERNAL_ERROR" });
   }
 }
 

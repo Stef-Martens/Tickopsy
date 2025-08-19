@@ -76,18 +76,13 @@ export function SignUpForm({ onSuccess }) {
 
       if (res.success) {
         onSuccess();
+      } else if (res.errorCode === "EMAIL_EXISTS") {
+        setErrors({ email: res.error });
       } else {
-        if (res.error?.includes("Email")) {
-          setErrors({ email: res.error });
-        } else {
-          setErrors({ general: res.error || "An unknown error occurred" });
-        }
+        setErrors({ general: res.error });
       }
-    } catch (err) {
-      console.error(err);
-      setErrors({ general: "Server error. Please try again later." });
     } finally {
-      setLoading(false); // ✅ always reset loading state
+      setLoading(false);
     }
   };
 
@@ -112,36 +107,46 @@ export function SignUpForm({ onSuccess }) {
             <div className="grid grid-cols-2 gap-4 items-start">
               <div className="grid gap-2">
                 <Label htmlFor="first-name">First name</Label>
-                <Input name="first-name" id="first-name" />
-                {errors["first-name"] && (
-                  <p className="text-red-500 text-xs">{errors["first-name"]}</p>
-                )}
+                <Input
+                  name="first-name"
+                  id="first-name"
+                  variant={errors["first-name"] ? "error" : "default"}
+                  errorMessage={errors["first-name"]}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="last-name">Last name</Label>
-                <Input name="last-name" id="last-name" />
-                {errors["last-name"] && (
-                  <p className="text-red-500 text-xs">{errors["last-name"]}</p>
-                )}
+                <Input
+                  name="last-name"
+                  id="last-name"
+                  variant={errors["last-name"] ? "error" : "default"}
+                  errorMessage={errors["last-name"]}
+                />
               </div>
             </div>
 
             {/* Email */}
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input name="email" id="email" type="email" />
-              {errors.email && (
-                <p className="text-red-500 text-xs">{errors.email}</p>
-              )}
+              <Input
+                name="email"
+                id="email"
+                type="email"
+                variant={errors.email ? "error" : "default"}
+                errorMessage={errors.email}
+              />
             </div>
 
             {/* Password */}
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input name="password" id="password" type="password" />
-              {errors.password && (
-                <p className="text-red-500 text-xs">{errors.password}</p>
-              )}
+              <Input
+                name="password"
+                id="password"
+                type="password"
+                variant={errors.password ? "error" : "default"}
+                errorMessage={errors.password}
+              />
             </div>
 
             {/* Confirm Password */}
@@ -151,12 +156,9 @@ export function SignUpForm({ onSuccess }) {
                 name="confirm-password"
                 id="confirm-password"
                 type="password"
+                variant={errors["confirm-password"] ? "error" : "default"}
+                errorMessage={errors["confirm-password"]}
               />
-              {errors["confirm-password"] && (
-                <p className="text-red-500 text-xs">
-                  {errors["confirm-password"]}
-                </p>
-              )}
             </div>
 
             {/* General error */}

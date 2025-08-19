@@ -44,7 +44,8 @@ export function LoginForm({
     setErrors({});
 
     try {
-      const res = await loginAction({ email, password });
+      const formData = new FormData(e.currentTarget);
+      const res = await loginAction(formData);
 
       if (res.success) {
         window.location.href = "/dashboard"; // or wherever

@@ -3,39 +3,28 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "../utils/supabase/server";
+import { apiFetch } from "./api";
 
-export async function login({
-  email,
-  password,
-}: {
-  email: string;
-  password: string;
-}) {
-  try {
-    console.log("Attempting login for:", email);
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+export async function login(formData: FormData) {
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
-    const data = await res.json();
+  const supabase = createClient();
 
-    if (!res.ok) {
-      console.error("Login failed:", data.error || "Unknown error");
-      return { success: false, error: data.error || "Login failed" };
-    }
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-    console.log("Login successful for:", email);
-    return { success: true, data };
-  } catch (error) {
-    console.error("Login error:", error);
-    return { success: false, error: "Something went wrong" };
+  if (error) {
+    return { success: false, error: error.message };
   }
+
+  return { success: true, data };
 }
 
 export async function signup(formData: FormData) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/signup`, {
+  return apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -44,20 +33,17 @@ export async function signup(formData: FormData) {
       password: formData.get("password"),
     }),
   });
-
-  const data = await res.json();
-  return { success: res.ok, error: data.error };
 }
 
-export async function signout() {
+export async function logoutAction() {
   const supabase = createClient();
+
   const { error } = await supabase.auth.signOut();
   if (error) {
-    console.log(error);
-    redirect("/error");
+    return { success: false, error: error.message };
   }
 
-  redirect("/logout");
+  return { success: true };
 }
 
 export async function signInWithGoogle() {

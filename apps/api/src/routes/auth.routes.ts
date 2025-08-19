@@ -5,8 +5,6 @@ const router = Router();
 
 // Public auth routes
 router.post("/signup", authController.signup);
-router.post("/login", authController.login);
-router.post("/logout", authController.logout);
 router.post("/forgot-password", authController.forgotPassword);
 
 export default router;

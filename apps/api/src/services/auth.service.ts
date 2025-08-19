@@ -1,5 +1,14 @@
 import prisma from "@stef_martens/database-tickopsy";
 import { supabase } from "../lib/supabase";
+import { AppError } from "./error.service";
+
+export class SignupError extends Error {
+  code: string;
+  constructor(message: string, code: string) {
+    super(message);
+    this.code = code;
+  }
+}
 
 export async function signupUser({
   name,
@@ -13,25 +22,18 @@ export async function signupUser({
   role?: string;
 }) {
   if (!email || !password || !name) {
-    throw new Error("Name, email, and password are required");
-  }
-  if (password.length < 6) {
-    throw new Error("Password must be at least 6 characters");
+    throw new SignupError(
+      "Name, email, and password are required",
+      "INVALID_INPUT"
+    );
   }
 
-  // Check if user already exists in Prisma
-  const existingUser = await prisma.user.findFirst({
-    where: { email },
-  });
+  const existingUser = await prisma.user.findFirst({ where: { email } });
 
   if (existingUser) {
-    return {
-      status: "error",
-      message: "User already exists",
-    };
+    throw new AppError("User already exists", "EMAIL_EXISTS", 400);
   }
 
-  // Create user in Supabase auth
   const { data: authUser, error } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -40,71 +42,26 @@ export async function signupUser({
 
   if (error) {
     if (error.message.includes("already registered")) {
-      return {
-        status: "error",
-        message: "Email is already registered",
-      };
+      throw new AppError("Email is already registered", "EMAIL_EXISTS", 400);
     }
-    throw new Error(error.message);
+    throw new AppError(error.message, "SUPABASE_ERROR", 400);
   }
 
-  // Create account in Prisma
   const account = await prisma.account.create({
-    data: {
-      name: `${name}'s Account`,
-      email,
-      phone: "",
-    },
+    data: { name: `${name}'s Account`, email, phone: "" },
   });
 
-  // Create user in Prisma linked to the account
   const newUser = await prisma.user.create({
     data: {
-      authId: authUser.user.id, // Supabase auth user ID
-      accountId: account.id, // Link to the created account
+      authId: authUser.user.id,
+      accountId: account.id,
       name,
       email,
       role,
     },
   });
 
-  return {
-    status: "success",
-    user: newUser,
-    account,
-  };
-}
-
-export async function loginUser({
-  email,
-  password,
-}: {
-  email: string;
-  password: string;
-}) {
-  if (!email || !password) {
-    throw new Error("Email and password are required");
-  }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    if (error.message.includes("Invalid login credentials")) {
-      throw new Error("Incorrect email or password");
-    }
-    throw new Error(error.message);
-  }
-
-  return data;
-}
-
-export async function logoutUser() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw new Error(error.message);
-  return true;
+  return { status: "success", user: newUser, account };
 }
 
 export async function sendPasswordReset(email: string) {
