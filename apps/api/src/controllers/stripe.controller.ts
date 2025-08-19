@@ -17,7 +17,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
     const signature = req.headers["stripe-signature"]!;
     event = stripe.webhooks.constructEvent(
       req.body, // ✅ use req.body (Buffer from express.raw)
-
       signature,
       endpointSecret
     );

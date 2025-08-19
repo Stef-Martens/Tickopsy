@@ -1,20 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateSession } from "./utils/supabase/middleware";
 
-export async function middleware(request: NextRequest) {
-  const url = request.nextUrl.pathname;
+const allowedPaths = [
+  "/",
+  "/dashboard",
+  "/get-started",
+  "/about",
+  "/contact",
+  "/api/(.*)",
+  "/_next/(.*)",
+  "/favicon.ico",
+  "/.*\\.(svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?)$",
+];
 
-  // Block .php, .asp, .jsp, etc.
-  if (url.match(/\.(php|asp|jsp)$/i)) {
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  const isAllowed = allowedPaths.some((pattern) =>
+    new RegExp(`^${pattern}$`).test(pathname)
+  );
+
+  if (!isAllowed) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
-  // Proceed with your Supabase session update
   return await updateSession(request);
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/:path*"],
 };
