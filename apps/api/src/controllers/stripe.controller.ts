@@ -15,11 +15,11 @@ export const handleWebhook = async (req: Request, res: Response) => {
   try {
     // Stripe requires the raw body to verify signature
     const signature = req.headers["stripe-signature"]!;
-    event = stripe.webhooks.constructEvent(
-      req.body, // ✅ use req.body (Buffer from express.raw)
-      signature,
-      endpointSecret
-    );
+    if (!signature) {
+      return res.status(400).send("Missing Stripe signature header");
+    }
+    console.log("Stripe signature header found:", signature);
+    event = stripe.webhooks.constructEvent(req.body, signature, endpointSecret);
   } catch (err) {
     console.error("⚠️ Webhook signature verification failed.", err);
     return res.status(400).send(`Webhook Error: ${err}`);
