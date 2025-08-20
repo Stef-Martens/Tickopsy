@@ -1,7 +1,7 @@
-// app/dashboard/layout.tsx
 import { redirect } from "next/navigation";
 import { me } from "@/lib/api/auth-actions";
 import { SessionProvider } from "@/providers/session-provider";
+import { ThemeProviderDashboard } from "@/providers/theme-provider";
 
 export default async function DashboardLayout({
   children,
@@ -12,7 +12,7 @@ export default async function DashboardLayout({
 
   try {
     userInfo = await me();
-    if (!userInfo) {
+    if (!userInfo.success) {
       redirect("/login");
     }
   } catch (error) {
@@ -27,5 +27,9 @@ export default async function DashboardLayout({
     account: userInfo.data.account,
   };
 
-  return <SessionProvider session={sessionData}>{children}</SessionProvider>;
+  return (
+    <ThemeProviderDashboard>
+      <SessionProvider session={sessionData}>{children}</SessionProvider>
+    </ThemeProviderDashboard>
+  );
 }

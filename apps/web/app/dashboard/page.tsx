@@ -4,6 +4,7 @@
 import { useSession } from "@/providers/session-provider";
 import { LogoutButton } from "@/components/logout-button";
 import { redirect } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function DashboardPage() {
   const { user, account } = useSession();
@@ -20,6 +21,7 @@ export default function DashboardPage() {
       <h1>Welcome, {user.email}</h1>
       <p>Account Status: {account.hasAccess ? "Active" : "Inactive"}</p>
       <LogoutButton />
+      <ThemeToggle />
     </>
   );
 }
