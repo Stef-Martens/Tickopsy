@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "../utils/supabase/server";
-import { apiFetch } from "./api";
+import { createClient } from "../../utils/supabase/server";
+import { apiFetch } from "./fetcher";
 
 export async function login(formData: FormData) {
   const email = formData.get("email") as string;

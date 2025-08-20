@@ -1,5 +1,5 @@
 // app/(onboarding)/layout.tsx
-import { me } from "@/lib/auth-actions";
+import { me } from "@/lib/api/auth-actions";
 import { SessionProvider } from "@/providers/session-provider";
 
 export default async function GetStartedLayout({

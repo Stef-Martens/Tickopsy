@@ -1,6 +1,12 @@
 export async function apiFetch(url: string, options: RequestInit = {}) {
   const res = await fetch(url, options);
-  const data = await res.json().catch(() => ({}));
+
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
 
   if (!res.ok) {
     return {

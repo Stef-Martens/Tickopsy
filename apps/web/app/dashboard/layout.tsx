@@ -1,6 +1,6 @@
 // app/dashboard/layout.tsx
 import { redirect } from "next/navigation";
-import { me } from "@/lib/auth-actions";
+import { me } from "@/lib/api/auth-actions";
 import { SessionProvider } from "@/providers/session-provider";
 
 export default async function DashboardLayout({

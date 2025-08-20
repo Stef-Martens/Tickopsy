@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/lib/api/api";
 import { signup } from "@/lib/auth-actions";
 
 export default function AuthCallbackPage() {

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login as loginAction } from "@/lib/auth-actions";
+import { login as loginAction } from "@/lib/api/auth-actions";
 import SignInWithGoogleButton from "./sign-in-with-google-button";
 
 export function LoginForm({
