@@ -10,50 +10,90 @@ export class SignupError extends Error {
   }
 }
 
-export async function signupUser({
-  name,
-  email,
-  password,
-  role = "ADMIN",
-}: {
-  name: string;
-  email: string;
-  password: string;
-  role?: string;
-}) {
-  if (!email || !password || !name) {
-    throw new SignupError(
-      "Name, email, and password are required",
-      "INVALID_INPUT"
-    );
-  }
-
-  const existingUser = await prisma.user.findFirst({ where: { email } });
-
-  if (existingUser) {
-    throw new AppError("User already exists", "EMAIL_EXISTS", 400);
-  }
-
-  const { data: authUser, error } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-
-  if (error) {
-    if (error.message.includes("already registered")) {
-      throw new AppError("Email is already registered", "EMAIL_EXISTS", 400);
+type UpsertUserArgs =
+  | {
+      email: string;
+      name: string;
+      password: string;
+      role?: string;
+      provider?: undefined;
+      accessToken?: undefined;
     }
-    throw new AppError(error.message, "SUPABASE_ERROR", 400);
+  | {
+      email: string;
+      name: string;
+      provider: string;
+      accessToken: string;
+      role?: string;
+      password?: undefined;
+    };
+
+export async function signupUser(args: UpsertUserArgs) {
+  const { email, name, role = "ADMIN" } = args;
+
+  if (!email || !name) {
+    throw new Error("Email and name are required");
   }
 
-  const account = await prisma.account.create({
+  // --- 1. Resolve Supabase auth user ---
+  let authUserId: string | null = null;
+
+  if ("password" in args && args.password) {
+    // Email/password signup
+    const { data: authUser, error } = await supabase.auth.admin.createUser({
+      email,
+      password: args.password,
+      email_confirm: true,
+    });
+
+    if (error) {
+      if (error.message.includes("already registered")) {
+        // Fetch existing Supabase user
+        const { data: users } = await supabase.auth.admin.listUsers();
+        const existing = users.users.find((u) => u.email === email);
+        if (!existing) throw new Error("Supabase user not found");
+        authUserId = existing.id;
+      } else {
+        throw new Error(`Supabase error: ${error.message}`);
+      }
+    } else {
+      authUserId = authUser.user.id;
+    }
+  } else if ("provider" in args && args.provider) {
+    // Social login (Google, etc.)
+    const { data: users, error } = await supabase.auth.admin.listUsers();
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    const existing = users.users.find((u) => u.email === email);
+    if (!existing) {
+      throw new Error("Supabase user not found for social login");
+    }
+    authUserId = existing.id;
+  }
+
+  if (!authUserId) {
+    throw new Error("Could not resolve Supabase auth user ID");
+  }
+
+  // --- 2. Check if app user already exists (by authId) ---
+  let user = await prisma.user.findFirst({ where: { authId: authUserId } });
+  let account = null;
+
+  if (user) {
+    account = await prisma.account.findUnique({
+      where: { id: user.accountId },
+    });
+    return { status: "exists", user, account };
+  }
+
+  // --- 3. Create account ---
+  account = await prisma.account.create({
     data: { name: `${name}'s Account`, email, phone: "", hasAccess: false },
   });
 
-  const newUser = await prisma.user.create({
+  // --- 4. Create app user ---
+  user = await prisma.user.create({
     data: {
-      authId: authUser.user.id,
+      authId: authUserId,
       accountId: account.id,
       name,
       email,
@@ -61,46 +101,8 @@ export async function signupUser({
     },
   });
 
-  return { status: "success", user: newUser, account };
+  return { status: "created", user, account };
 }
-
-// export async function signupSocialUser({
-//   email,
-//   name,
-//   provider,
-//   accessToken,
-// }: {
-//   email: string;
-//   name: string;
-//   provider: string;
-//   accessToken: string;
-// }) {
-//   if (!email || !provider || !accessToken) {
-//     throw new Error("Email, provider, and access token are required");
-//   }
-
-//   let account = null;
-//   let newUser = null;
-
-//   if (await !prisma.account.findFirst({ where: { email } })) {
-//      account = await prisma.account.create({
-//       data: { name: `${name}'s Account`, email, phone: "", hasAccess: false },
-//     });
-//   }
-
-//   if (await !prisma.user.findFirst({ where: { email } })) {
-//        newUser = await prisma.user.create({
-//     data: {
-//       authId: authUser.user.id,
-//       accountId: account.id,
-//       name,
-//       email,
-//       role,
-//     },
-//   });
-
-//   return { status: "success", user: newUser, account };
-// }
 
 export async function sendPasswordReset(email: string) {
   if (!email) {

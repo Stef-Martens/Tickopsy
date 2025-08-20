@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { apiFetch } from "@/lib/api";
-import { signup, signupSocial } from "@/lib/auth-actions";
+import { signup } from "@/lib/auth-actions";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function AuthCallbackPage() {
       formData.append("provider", "google");
       formData.append("accessToken", session.access_token);
 
-      await signupSocial(formData);
+      await signup(formData);
 
       // Now user is guaranteed to exist in backend
       router.push("/dashboard");

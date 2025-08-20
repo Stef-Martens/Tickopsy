@@ -31,18 +31,8 @@ export async function signup(formData: FormData) {
       name: formData.get("first-name") + " " + formData.get("last-name"),
       email: formData.get("email"),
       password: formData.get("password"),
-    }),
-  });
-}
-
-export async function signupSocial(formData: FormData) {
-  return apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/signup-social`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: formData.get("email"),
-      provider: formData.get("provider"),
-      accessToken: formData.get("accessToken"),
+      provider: formData.get("provider") as string,
+      accessToken: formData.get("accessToken") as string,
     }),
   });
 }
