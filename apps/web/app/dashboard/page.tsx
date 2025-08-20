@@ -1,22 +1,21 @@
 // app/dashboard/page.tsx
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+"use client";
+
+import { useSession } from "@/providers/session-provider";
 import { LogoutButton } from "@/components/logout-button";
+import { redirect } from "next/navigation";
 
-export default async function DashboardPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function DashboardPage() {
+  const { user, account } = useSession();
 
-  if (!user) {
-    redirect("/login");
+  if (!account || !account.hasAccess) {
+    redirect("/get-started");
   }
 
   return (
     <>
       <h1>Welcome, {user.email}</h1>
-
+      <p>Account Status: {account.hasAccess ? "Active" : "Inactive"}</p>
       <LogoutButton />
     </>
   );

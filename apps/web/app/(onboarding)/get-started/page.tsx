@@ -1,11 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SignUpForm } from "@/components/get-started/sign-up-form";
 import { ChoosePlanCrumb } from "@/components/get-started/choose-plan-crumb";
 import OnboardingSuccess from "@/components/get-started/success-step";
+import { useSession } from "@/providers/session-provider";
 
 export default function GetStartedPage() {
+  const { user, account } = useSession();
+
+  useEffect(() => {
+    if (user && account && account.hasAccess) {
+      goToStep(4);
+    } else if (user && account && !account.hasAccess) {
+      goToStep(2);
+    } else {
+      goToStep(1);
+    }
+  }, []);
+
   const [currentStep, setCurrentStep] = useState(1);
 
   const goToStep = (step: number) => setCurrentStep(step);

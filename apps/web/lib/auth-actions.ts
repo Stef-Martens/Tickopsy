@@ -88,3 +88,18 @@ export async function forgotPassword({ email }: { email: string }) {
     return { success: false, error: "Something went wrong. Please try again." };
   }
 }
+
+export async function me() {
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    cache: "no-store", // always fetch fresh user data; can tweak for caching
+  });
+
+  return res.json();
+}

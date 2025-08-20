@@ -1,24 +1,29 @@
-"use client";
+// app/dashboard/layout.tsx
+import { redirect } from "next/navigation";
+import { me } from "@/lib/auth-actions";
+import { SessionProvider } from "@/providers/session-provider";
 
-import { SessionContextProvider } from "@supabase/auth-helpers-react";
-import { createBrowserClient } from "@supabase/ssr";
-import { useState } from "react";
-
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [supabase] = useState(() =>
-    createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-  );
+  let userInfo = null;
 
-  return (
-    <SessionContextProvider supabaseClient={supabase}>
-      {children}
-    </SessionContextProvider>
-  );
+  try {
+    userInfo = await me();
+    if (!userInfo) {
+      redirect("/login");
+    }
+  } catch (error) {
+    console.error("Error fetching user info:", error);
+    redirect("/login");
+  }
+
+  const sessionData = {
+    user: userInfo.user,
+    account: userInfo.account,
+  };
+
+  return <SessionProvider session={sessionData}>{children}</SessionProvider>;
 }
