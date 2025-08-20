@@ -8,6 +8,7 @@ const allowedPaths = [
   "/about",
   "/login",
   "/forgot-password",
+  "/auth/callback(\\?.*)?",
   "/contact",
   "/api/(.*)",
   "/_next/(.*)",

@@ -10,14 +10,17 @@ export default function GetStartedPage() {
   const { user, account } = useSession();
 
   useEffect(() => {
-    if (user && account && account.hasAccess) {
-      goToStep(4);
-    } else if (user && account && !account.hasAccess) {
-      goToStep(2);
-    } else {
+    if (!user && !account) {
       goToStep(1);
+      return;
     }
-  }, []);
+
+    if (account?.hasAccess) {
+      goToStep(4);
+    } else {
+      goToStep(2);
+    }
+  }, [user, account]);
 
   const [currentStep, setCurrentStep] = useState(1);
 
