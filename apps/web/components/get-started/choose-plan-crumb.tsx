@@ -17,9 +17,11 @@ import { cn } from "@/utils/utils";
 import { plans } from "@/app/constants";
 import { BillingToggle } from "@/components/ui/billing-toggle";
 
-interface ChoosePlanCrumbProps {}
+interface ChoosePlanCrumbProps {
+  email: string;
+}
 
-export function ChoosePlanCrumb({}: ChoosePlanCrumbProps) {
+export function ChoosePlanCrumb({ email }: ChoosePlanCrumbProps) {
   const [selected, setSelected] = useState<string>("basic");
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
 
@@ -32,7 +34,8 @@ export function ChoosePlanCrumb({}: ChoosePlanCrumbProps) {
     // Redirect to the plan's URL for the selected billing
     const url = plan.billing[billing]?.paymentUrl;
     if (url) {
-      window.location.href = url;
+      // get email from supabase session
+      window.location.href = url + "?prefilled_email=" + email;
     }
   };
 

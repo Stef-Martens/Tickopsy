@@ -7,10 +7,7 @@ export const plans = [
       monthly: {
         displayPrice: "€24,99",
         stripePriceId: "price_1Rw1ue4eLBjiZOJYONXFwAvN",
-        paymentUrl:
-          "https://buy.stripe.com/test_9B6aEQfod3687GSdcV8EM00" +
-          "?prefilled_email=" +
-          "stef.m@hotmail.be",
+        paymentUrl: "https://buy.stripe.com/test_9B6aEQfod3687GSdcV8EM00",
       },
       yearly: {
         displayPrice: "€239,99",

@@ -10,6 +10,8 @@ export default function GetStartedPage() {
   const { user, account } = useSession();
 
   useEffect(() => {
+    console.log("User:", user);
+    console.log("Account:", account);
     if (!user && !account) {
       goToStep(1);
       return;
@@ -31,7 +33,7 @@ export default function GetStartedPage() {
       <div className="w-full flex flex-col gap-4">
         {/* Step content */}
         {currentStep === 1 && <SignUpForm onSuccess={() => goToStep(2)} />}
-        {currentStep === 2 && <ChoosePlanCrumb />}
+        {currentStep === 2 && <ChoosePlanCrumb email={user?.email} />}
         {currentStep === 4 && <OnboardingSuccess />}
       </div>
     </div>

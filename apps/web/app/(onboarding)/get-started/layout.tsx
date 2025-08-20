@@ -11,14 +11,13 @@ export default async function GetStartedLayout({
 
   try {
     userInfo = await me();
-    console.log("User info fetched successfully:", userInfo);
   } catch (error) {
     console.error("Error fetching user info:", error);
   }
 
   const sessionData = {
-    user: userInfo?.user || null,
-    account: userInfo?.account || null,
+    user: userInfo?.data?.user || null,
+    account: userInfo?.data?.account || null,
   };
 
   return <SessionProvider session={sessionData}>{children}</SessionProvider>;

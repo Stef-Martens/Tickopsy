@@ -6,7 +6,7 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
     return {
       success: false,
       error: data.error || "Unknown error",
-      errorCode: data.code,
+      errorCode: data.code || "UNKNOWN_ERROR",
     };
   }
 

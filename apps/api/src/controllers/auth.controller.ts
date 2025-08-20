@@ -1,23 +1,15 @@
 import { Request, Response, NextFunction } from "express";
 import * as authService from "../services/auth.service";
-import { AppError } from "../services/error.service";
 import * as userService from "../services/user.service";
 import * as accountService from "../services/account.service";
+import { AppError } from "../services/error.service";
 
 export async function signup(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await authService.signupUser(req.body);
     res.status(200).json(result);
-  } catch (err: any) {
-    if (err instanceof AppError) {
-      return res
-        .status(err.status)
-        .json({ error: err.message, code: err.code });
-    }
-    console.error(err);
-    return res
-      .status(500)
-      .json({ error: "Internal server error", code: "INTERNAL_ERROR" });
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -36,10 +28,9 @@ export async function forgotPassword(
 
 export async function me(req: any, res: Response, next: NextFunction) {
   try {
-    console.log("Fetching user info for:", req);
     const user = await userService.getUserById(req.user.id);
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      throw new AppError("User not found", "USER_NOT_FOUND", 404);
     }
 
     const account = user.accountId
@@ -47,7 +38,7 @@ export async function me(req: any, res: Response, next: NextFunction) {
       : null;
 
     res.json({ user, account });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 }

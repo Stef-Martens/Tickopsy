@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as accountService from "../services/account.service";
+import { AppError } from "../services/error.service";
 
 export async function getAccounts(
   req: Request,
@@ -21,6 +22,9 @@ export async function getAccountById(
 ) {
   try {
     const account = await accountService.getAccountById(req.params.id);
+    if (!account) {
+      throw new AppError("Account not found", "ACCOUNT_NOT_FOUND", 404);
+    }
     res.json(account);
   } catch (error) {
     next(error);
@@ -47,6 +51,9 @@ export async function updateAccount(
 ) {
   try {
     const account = await accountService.updateAccount(req.params.id, req.body);
+    if (!account) {
+      throw new AppError("Account not found", "ACCOUNT_NOT_FOUND", 404);
+    }
     res.json(account);
   } catch (error) {
     next(error);
@@ -59,7 +66,10 @@ export async function deleteAccount(
   next: NextFunction
 ) {
   try {
-    await accountService.deleteAccount(req.params.id);
+    const deleted = await accountService.deleteAccount(req.params.id);
+    if (!deleted) {
+      throw new AppError("Account not found", "ACCOUNT_NOT_FOUND", 404);
+    }
     res.status(204).send();
   } catch (error) {
     next(error);

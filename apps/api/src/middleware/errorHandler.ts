@@ -1,14 +1,19 @@
+// middleware/errorHandler.ts
 import { Request, Response, NextFunction } from "express";
-import { supabase } from "src/lib/supabase";
+import { AppError } from "../services/error.service";
 
 export function errorHandler(
-  err: any,
+  err: Error,
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  console.error(err);
-  res
+  if (err instanceof AppError) {
+    return res.status(err.status).json({ error: err.message, code: err.code });
+  }
+
+  console.error("Unexpected error:", err);
+  return res
     .status(500)
-    .json({ error: "Internal Server Error", details: err.message });
+    .json({ error: "Internal server error", code: "INTERNAL_ERROR" });
 }
