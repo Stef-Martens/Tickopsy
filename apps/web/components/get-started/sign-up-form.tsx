@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { login, signup } from "@/lib/auth-actions";
+import { login, signup } from "@/lib/api/auth-actions";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
