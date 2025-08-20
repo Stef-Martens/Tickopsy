@@ -1,20 +1,21 @@
 "use client";
 
+import { createClient } from "@/utils/supabase/client";
 import { createContext, useContext } from "react";
-
-// import { User, Account } from "@prisma/client";
-
-// type Session = {
-//   user: User;
-//   account: Account | null;
-// };
 
 type Session = {
   user: any;
   account: any;
 };
 
-const SessionContext = createContext<Session | null>(null);
+type SessionContextType = {
+  user: any;
+  account: any;
+  logout: () => Promise<void>;
+};
+
+// Context now has session + logout
+const SessionContext = createContext<SessionContextType | null>(null);
 
 export function SessionProvider({
   session,
@@ -23,8 +24,17 @@ export function SessionProvider({
   session: Session;
   children: React.ReactNode;
 }) {
+  const supabase = createClient();
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/login"; // redirect after logout
+  };
+
   return (
-    <SessionContext.Provider value={session}>
+    <SessionContext.Provider
+      value={{ user: session.user, account: session.account, logout }}
+    >
       {children}
     </SessionContext.Provider>
   );

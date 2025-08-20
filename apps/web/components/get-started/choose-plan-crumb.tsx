@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/utils/utils";
 import { plans } from "@/app/constants";
 import { BillingToggle } from "@/components/ui/billing-toggle";
+import { useSession } from "@/providers/session-provider";
 
 interface ChoosePlanCrumbProps {
   email: string;
@@ -24,6 +25,7 @@ interface ChoosePlanCrumbProps {
 export function ChoosePlanCrumb({ email }: ChoosePlanCrumbProps) {
   const [selected, setSelected] = useState<string>("basic");
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+  const { logout } = useSession();
 
   const handleContinue = () => {
     if (!selected) return;
@@ -42,10 +44,29 @@ export function ChoosePlanCrumb({ email }: ChoosePlanCrumbProps) {
   return (
     <Card className="mx-auto max-w-3xl w-full">
       <CardHeader>
-        <CardTitle className="text-xl">Choose Your Plan</CardTitle>
-        <CardDescription>
-          Select the plan that fits your needs best
-        </CardDescription>
+        <div className="flex justify-between items-start">
+          {/* Left: Title + description */}
+          <div>
+            <CardTitle className="text-xl">Choose Your Plan</CardTitle>
+            <CardDescription>
+              Select the plan that fits your needs best
+            </CardDescription>
+          </div>
+
+          {/* Right: Email + Logout */}
+          <div className="flex flex-col items-end gap-2">
+            <span className="text-sm text-muted-foreground">{email}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                logout();
+              }}
+            >
+              Logout
+            </Button>
+          </div>
+        </div>
         <div className="mt-2">
           <Progress value={50} className="h-2 rounded-full" />
           <span className="text-xs text-muted-foreground mt-1 block">
@@ -53,7 +74,6 @@ export function ChoosePlanCrumb({ email }: ChoosePlanCrumbProps) {
           </span>
         </div>
       </CardHeader>
-
       <CardContent>
         {/* Billing toggle */}
         <div className="flex justify-center mb-6">
