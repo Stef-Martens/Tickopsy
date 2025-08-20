@@ -11,6 +11,7 @@ export default async function GetStartedLayout({
 
   try {
     userInfo = await me();
+    console.log("User info fetched successfully:", userInfo);
   } catch (error) {
     console.error("Error fetching user info:", error);
   }

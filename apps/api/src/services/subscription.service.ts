@@ -5,14 +5,14 @@ export async function updateSubscription({
   email,
   status,
   priceId,
-  expiresAt,
+  expiredAt = new Date(),
 }: {
   customerId: string;
   subscriptionId: string;
   email?: string;
   status: string;
   priceId: string;
-  expiresAt: string | number | Date;
+  expiredAt?: string | number | Date;
 }) {
   const user = await prisma.user.findFirst({ where: { email } });
   if (!user) throw new Error("User not found");
@@ -24,7 +24,7 @@ export async function updateSubscription({
       priceId,
       status,
       startedAt: new Date(),
-      expiresAt: new Date(expiresAt), // depends on Stripe period end
+      expiredAt: status !== "active" ? new Date(expiredAt) : undefined,
     },
     create: {
       accountId, // get the account linked to the Stripe customer
@@ -32,7 +32,7 @@ export async function updateSubscription({
       priceId,
       status,
       startedAt: new Date(),
-      expiresAt: new Date(expiresAt),
+      expiredAt: status !== "active" ? new Date(expiredAt) : undefined,
     },
   });
 

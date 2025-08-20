@@ -35,6 +35,18 @@ export async function signup(formData: FormData) {
   });
 }
 
+export async function signupSocial(formData: FormData) {
+  return apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/signup-social`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: formData.get("email"),
+      provider: formData.get("provider"),
+      accessToken: formData.get("accessToken"),
+    }),
+  });
+}
+
 export async function logoutAction() {
   const supabase = createClient();
 

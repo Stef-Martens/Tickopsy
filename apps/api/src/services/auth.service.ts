@@ -64,6 +64,44 @@ export async function signupUser({
   return { status: "success", user: newUser, account };
 }
 
+// export async function signupSocialUser({
+//   email,
+//   name,
+//   provider,
+//   accessToken,
+// }: {
+//   email: string;
+//   name: string;
+//   provider: string;
+//   accessToken: string;
+// }) {
+//   if (!email || !provider || !accessToken) {
+//     throw new Error("Email, provider, and access token are required");
+//   }
+
+//   let account = null;
+//   let newUser = null;
+
+//   if (await !prisma.account.findFirst({ where: { email } })) {
+//      account = await prisma.account.create({
+//       data: { name: `${name}'s Account`, email, phone: "", hasAccess: false },
+//     });
+//   }
+
+//   if (await !prisma.user.findFirst({ where: { email } })) {
+//        newUser = await prisma.user.create({
+//     data: {
+//       authId: authUser.user.id,
+//       accountId: account.id,
+//       name,
+//       email,
+//       role,
+//     },
+//   });
+
+//   return { status: "success", user: newUser, account };
+// }
+
 export async function sendPasswordReset(email: string) {
   if (!email) {
     throw new Error("Email is required");

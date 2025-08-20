@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signup } from "@/lib/auth-actions";
+import { login, signup } from "@/lib/auth-actions";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,6 +75,14 @@ export function SignUpForm({ onSuccess }) {
       const res = await signup(formData);
 
       if (res.success) {
+        const loginRes = await login(formData);
+
+        if (!loginRes.success) {
+          return {
+            success: false,
+            error: "Signup succeeded but login failed.",
+          };
+        }
         onSuccess();
       } else if (res.errorCode === "EMAIL_EXISTS") {
         setErrors({ email: res.error });

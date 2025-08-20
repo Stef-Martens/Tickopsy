@@ -34,6 +34,10 @@ export const handleWebhook = async (req: Request, res: Response) => {
       const subscriptionId = session.subscription as string;
       const email = session.customer_email;
 
+      const subscriptionValue: Stripe.Subscription =
+        await stripe.subscriptions.retrieve(subscriptionId);
+      const priceId = subscriptionValue.items.data[0].price.id;
+
       console.log("session metadata:", session.metadata);
 
       try {
@@ -42,11 +46,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
           customerId,
           subscriptionId,
           email: email ?? undefined,
-          priceId: session.metadata?.priceId || "default",
+          priceId: priceId || "default",
           status: "active",
-          expiresAt: session.expires_at
-            ? new Date(session.expires_at * 1000)
-            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // fallback: 30 days from now
         });
       } catch (err) {
         console.error("Failed to update subscription:", err);
@@ -75,7 +76,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
         subscriptionId: deletedSubscriptionId,
         status: "canceled",
         priceId: deletedSubscription.items.data[0].price.id,
-        expiresAt: new Date(),
+        expiredAt: new Date(),
       });
 
       // TODO: update subscription info in DB

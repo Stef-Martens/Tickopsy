@@ -1,30 +1,46 @@
 "use client";
+
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { apiFetch } from "@/lib/api";
+import { signup, signupSocial } from "@/lib/auth-actions";
 
-export default function OAuthCallback() {
+export default function AuthCallbackPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
     async function handleOAuth() {
-      // After Google redirects, Supabase automatically stores the session in local storage/cookies
-      // We can just read the session
+      const supabase = createClient();
       const {
         data: { session },
-        error,
       } = await supabase.auth.getSession();
-      if (error || !session) {
-        console.error(error);
+
+      if (!session?.user) {
+        router.push("/error");
         return;
       }
-      // session exists now, redirect to dashboard
-      router.replace("/dashboard");
+
+      // Get Google profile info from Supabase session
+      const { email, user_metadata } = session.user;
+      const name =
+        user_metadata?.full_name ??
+        `${user_metadata?.first_name ?? ""} ${user_metadata?.last_name ?? ""}`;
+
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("name", name);
+      formData.append("provider", "google");
+      formData.append("accessToken", session.access_token);
+
+      await signupSocial(formData);
+
+      // Now user is guaranteed to exist in backend
+      router.push("/dashboard");
     }
 
     handleOAuth();
-  }, [router, supabase]);
+  }, [router]);
 
-  return <p>Logging you in...</p>;
+  return <p>Signing you in...</p>;
 }
