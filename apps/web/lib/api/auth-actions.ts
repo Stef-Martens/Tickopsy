@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "../../utils/supabase/server";
 import { apiFetch } from "./fetcher";
@@ -72,7 +73,7 @@ export async function forgotPassword({ email }: { email: string }) {
   });
 }
 
-export async function me() {
+export const me = cache(async () => {
   const supabase = createClient();
   const {
     data: { session },
@@ -82,6 +83,6 @@ export async function me() {
     headers: {
       Authorization: `Bearer ${session?.access_token}`,
     },
-    cache: "no-store", // always fetch fresh user data
+    next: { revalidate: 60 },
   });
-}
+});

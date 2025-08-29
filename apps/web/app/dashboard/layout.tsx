@@ -20,8 +20,6 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  console.log("User info fetched successfully:", userInfo);
-
   const sessionData = {
     user: userInfo.data.user,
     account: userInfo.data.account,

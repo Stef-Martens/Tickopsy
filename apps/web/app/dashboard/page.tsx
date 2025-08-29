@@ -9,9 +9,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function DashboardPage() {
   const { user, account } = useSession();
 
-  console.log("User:", user);
-  console.log("Account:", account);
-
   if (!account || !account.hasAccess) {
     redirect("/get-started");
   }
