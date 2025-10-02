@@ -4,35 +4,47 @@ export async function updateSubscription({
   subscriptionId,
   email,
   status,
-  plan,
-  expiresAt,
+  priceId,
+  expiredAt = new Date(),
 }: {
   customerId: string;
   subscriptionId: string;
   email?: string;
   status: string;
-  plan: string;
-  expiresAt: string | number | Date;
+  priceId: string;
+  expiredAt?: string | number | Date;
 }) {
   const user = await prisma.user.findFirst({ where: { email } });
   if (!user) throw new Error("User not found");
   const accountId = user.accountId; // assuming user has an accountId field
 
   await prisma.subscription.upsert({
-    where: { id: subscriptionId }, // use the unique subscription id
+    where: { stripeId: subscriptionId }, // use the unique subscription id
     update: {
-      plan,
+      priceId,
       status,
       startedAt: new Date(),
-      expiresAt: new Date(expiresAt), // depends on Stripe period end
+      expiredAt: status !== "active" ? new Date(expiredAt) : undefined,
     },
     create: {
       accountId, // get the account linked to the Stripe customer
       stripeId: subscriptionId,
-      plan,
+      priceId,
       status,
       startedAt: new Date(),
-      expiresAt: new Date(expiresAt),
+      expiredAt: status !== "active" ? new Date(expiredAt) : undefined,
     },
   });
+
+  if (status === "active") {
+    await prisma.account.update({
+      where: { id: accountId },
+      data: { hasAccess: true },
+    });
+  } else if (status === "canceled" || status === "past_due") {
+    await prisma.account.update({
+      where: { id: accountId },
+      data: { hasAccess: false },
+    });
+  }
 }

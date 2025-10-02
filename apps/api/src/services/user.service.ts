@@ -1,14 +1,14 @@
 import prisma from "@stef_martens/database-tickopsy";
 import { supabase } from "../lib/supabase";
 
-export function getAllUsers() {
-  return prisma.user.findMany({
+export async function getAllUsers() {
+  return await prisma.user.findMany({
     include: { account: true, ticketsCreated: true },
   });
 }
 
-export function getUserById(id: string) {
-  return prisma.user.findUnique({
+export async function getUserById(id: string) {
+  return await prisma.user.findUnique({
     where: { id },
     include: { account: true },
   });
@@ -30,6 +30,6 @@ export async function updateUser(
   });
 }
 
-export function deleteUser(id: string) {
-  return prisma.user.delete({ where: { id } });
+export async function deleteUser(id: string) {
+  return await prisma.user.delete({ where: { id } });
 }

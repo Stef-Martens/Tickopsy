@@ -39,6 +39,7 @@ exports.createAccount = createAccount;
 exports.updateAccount = updateAccount;
 exports.deleteAccount = deleteAccount;
 const accountService = __importStar(require("../services/account.service"));
+const error_service_1 = require("../services/error.service");
 async function getAccounts(req, res, next) {
     try {
         const accounts = await accountService.getAllAccounts();
@@ -51,6 +52,9 @@ async function getAccounts(req, res, next) {
 async function getAccountById(req, res, next) {
     try {
         const account = await accountService.getAccountById(req.params.id);
+        if (!account) {
+            throw new error_service_1.AppError("Account not found", "ACCOUNT_NOT_FOUND", 404);
+        }
         res.json(account);
     }
     catch (error) {
@@ -69,6 +73,9 @@ async function createAccount(req, res, next) {
 async function updateAccount(req, res, next) {
     try {
         const account = await accountService.updateAccount(req.params.id, req.body);
+        if (!account) {
+            throw new error_service_1.AppError("Account not found", "ACCOUNT_NOT_FOUND", 404);
+        }
         res.json(account);
     }
     catch (error) {
@@ -77,7 +84,10 @@ async function updateAccount(req, res, next) {
 }
 async function deleteAccount(req, res, next) {
     try {
-        await accountService.deleteAccount(req.params.id);
+        const deleted = await accountService.deleteAccount(req.params.id);
+        if (!deleted) {
+            throw new error_service_1.AppError("Account not found", "ACCOUNT_NOT_FOUND", 404);
+        }
         res.status(204).send();
     }
     catch (error) {

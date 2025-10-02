@@ -3,89 +3,87 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SignupError = void 0;
 exports.signupUser = signupUser;
-exports.loginUser = loginUser;
-exports.logoutUser = logoutUser;
 exports.sendPasswordReset = sendPasswordReset;
 const database_tickopsy_1 = __importDefault(require("@stef_martens/database-tickopsy"));
 const supabase_1 = require("../lib/supabase");
-async function signupUser({ name, email, password, role = "user", }) {
-    if (!email || !password || !name) {
-        throw new Error("Name, email, and password are required");
+class SignupError extends Error {
+    constructor(message, code) {
+        super(message);
+        this.code = code;
     }
-    if (password.length < 6) {
-        throw new Error("Password must be at least 6 characters");
+}
+exports.SignupError = SignupError;
+async function signupUser(args) {
+    const { email, name, role = "ADMIN" } = args;
+    if (!email || !name) {
+        throw new Error("Email and name are required");
     }
-    // Check if user already exists in Prisma
-    const existingUser = await database_tickopsy_1.default.user.findFirst({
-        where: { email },
-    });
-    if (existingUser) {
-        return {
-            status: "error",
-            message: "User already exists",
-        };
-    }
-    // Create user in Supabase auth
-    const { data: authUser, error } = await supabase_1.supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-    });
-    if (error) {
-        if (error.message.includes("already registered")) {
-            return {
-                status: "error",
-                message: "Email is already registered",
-            };
-        }
-        throw new Error(error.message);
-    }
-    // Create account in Prisma
-    const account = await database_tickopsy_1.default.account.create({
-        data: {
-            name: `${name}'s Account`,
+    // --- 1. Resolve Supabase auth user ---
+    let authUserId = null;
+    if ("password" in args && args.password) {
+        // Email/password signup
+        const { data: authUser, error } = await supabase_1.supabase.auth.admin.createUser({
             email,
-            phone: "",
-        },
+            password: args.password,
+            email_confirm: true,
+        });
+        if (error) {
+            if (error.message.includes("already registered")) {
+                // Fetch existing Supabase user
+                const { data: users } = await supabase_1.supabase.auth.admin.listUsers();
+                const existing = users.users.find((u) => u.email === email);
+                if (!existing)
+                    throw new Error("Supabase user not found");
+                authUserId = existing.id;
+            }
+            else {
+                throw new Error(`Supabase error: ${error.message}`);
+            }
+        }
+        else {
+            authUserId = authUser.user.id;
+        }
+    }
+    else if ("provider" in args && args.provider) {
+        // Social login (Google, etc.)
+        const { data: users, error } = await supabase_1.supabase.auth.admin.listUsers();
+        if (error)
+            throw new Error(`Supabase error: ${error.message}`);
+        const existing = users.users.find((u) => u.email === email);
+        if (!existing) {
+            throw new Error("Supabase user not found for social login");
+        }
+        authUserId = existing.id;
+    }
+    if (!authUserId) {
+        throw new Error("Could not resolve Supabase auth user ID");
+    }
+    // --- 2. Check if app user already exists (by authId) ---
+    let user = await database_tickopsy_1.default.user.findFirst({ where: { authId: authUserId } });
+    let account = null;
+    if (user) {
+        account = await database_tickopsy_1.default.account.findUnique({
+            where: { id: user.accountId },
+        });
+        return { status: "exists", user, account };
+    }
+    // --- 3. Create account ---
+    account = await database_tickopsy_1.default.account.create({
+        data: { name: `${name}'s Account`, email, phone: "", hasAccess: false },
     });
-    // Create user in Prisma linked to the account
-    const newUser = await database_tickopsy_1.default.user.create({
+    // --- 4. Create app user ---
+    user = await database_tickopsy_1.default.user.create({
         data: {
-            authId: authUser.user.id, // Supabase auth user ID
-            accountId: account.id, // Link to the created account
+            authId: authUserId,
+            accountId: account.id,
             name,
             email,
             role,
         },
     });
-    return {
-        status: "success",
-        user: newUser,
-        account,
-    };
-}
-async function loginUser({ email, password, }) {
-    if (!email || !password) {
-        throw new Error("Email and password are required");
-    }
-    const { data, error } = await supabase_1.supabase.auth.signInWithPassword({
-        email,
-        password,
-    });
-    if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-            throw new Error("Incorrect email or password");
-        }
-        throw new Error(error.message);
-    }
-    return data;
-}
-async function logoutUser() {
-    const { error } = await supabase_1.supabase.auth.signOut();
-    if (error)
-        throw new Error(error.message);
-    return true;
+    return { status: "created", user, account };
 }
 async function sendPasswordReset(email) {
     if (!email) {

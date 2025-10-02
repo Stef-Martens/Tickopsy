@@ -3,28 +3,31 @@
 
 A modern full-stack web application built with **Turborepo** for scalable monorepo management.
 
-- **Frontend** — [Next.js](https://nextjs.org) app deployed on [Vercel](https://vercel.com)  
-- **Backend API** — [Express](https://expressjs.com/) + TypeScript deployed on [Railway](https://railway.app)  
-- **Database** — [Supabase](https://supabase.com) (PostgreSQL)  
+- **Frontend** — [Next.js](https://nextjs.org) app deployed on [Vercel](https://vercel.com)
+- **Backend API** — [Express](https://expressjs.com/) + TypeScript deployed on [Railway](https://railway.app)
+- **Database** — [Supabase](https://supabase.com) (PostgreSQL)
 - **CI/CD** — Automated deployments via GitHub Actions
 
 ---
 
-## 📂 Monorepo Structure
+some random commands for during dev:
+npm run db:migrate:dev -- --name [name]
+stripe listen --forward-to localhost:4000/api/stripe/webhook
 
+## 📂 Monorepo Structure
 ```
 
 .
 ├── apps
-│   ├── frontend     # Next.js frontend app (Vercel)
-│   └── api          # Express backend API (Railway)
+│ ├── frontend # Next.js frontend app (Vercel)
+│ └── api # Express backend API (Railway)
 │
 ├── packages
-│   ├── database     # Prisma schema & client for Supabase
-│   └── config       # Shared config/utilities
+│ ├── database # Prisma schema & client for Supabase
+│ └── config # Shared config/utilities
 │
-├── turbo.json       # Turborepo configuration
-└── package.json     # Root workspace config
+├── turbo.json # Turborepo configuration
+└── package.json # Root workspace config
 
 ````
 
@@ -147,21 +150,21 @@ npm run db:studio     # Open Prisma Studio
 
 ## 📦 Tech Stack
 
-* **Monorepo** — Turborepo
-* **Frontend** — Next.js + TypeScript
-* **Backend** — Express + TypeScript
-* **Database** — Supabase (PostgreSQL) + Prisma
-* **Hosting** — Vercel (frontend), Railway (backend)
-* **CI/CD** — GitHub Actions
+- **Monorepo** — Turborepo
+- **Frontend** — Next.js + TypeScript
+- **Backend** — Express + TypeScript
+- **Database** — Supabase (PostgreSQL) + Prisma
+- **Hosting** — Vercel (frontend), Railway (backend)
+- **CI/CD** — GitHub Actions
 
 ---
 
 ## 💡 Notes
 
-* `packages/database` is the single source of truth for DB schema.
-* Run migrations before deploying backend changes.
-* Set all `.env` variables in hosting dashboards.
-* GitHub secrets store API tokens for deployment automation.
+- `packages/database` is the single source of truth for DB schema.
+- Run migrations before deploying backend changes.
+- Set all `.env` variables in hosting dashboards.
+- GitHub secrets store API tokens for deployment automation.
 
 ```
 
