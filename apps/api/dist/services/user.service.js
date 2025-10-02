@@ -8,13 +8,13 @@ exports.getUserById = getUserById;
 exports.updateUser = updateUser;
 exports.deleteUser = deleteUser;
 const database_tickopsy_1 = __importDefault(require("@stef_martens/database-tickopsy"));
-function getAllUsers() {
-    return database_tickopsy_1.default.user.findMany({
+async function getAllUsers() {
+    return await database_tickopsy_1.default.user.findMany({
         include: { account: true, ticketsCreated: true },
     });
 }
-function getUserById(id) {
-    return database_tickopsy_1.default.user.findUnique({
+async function getUserById(id) {
+    return await database_tickopsy_1.default.user.findUnique({
         where: { id },
         include: { account: true },
     });
@@ -26,6 +26,6 @@ async function updateUser(id, data) {
         data,
     });
 }
-function deleteUser(id) {
-    return database_tickopsy_1.default.user.delete({ where: { id } });
+async function deleteUser(id) {
+    return await database_tickopsy_1.default.user.delete({ where: { id } });
 }

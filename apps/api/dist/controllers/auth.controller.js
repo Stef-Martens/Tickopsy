@@ -34,32 +34,16 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.signup = signup;
-exports.login = login;
-exports.logout = logout;
 exports.forgotPassword = forgotPassword;
+exports.me = me;
 const authService = __importStar(require("../services/auth.service"));
+const userService = __importStar(require("../services/user.service"));
+const accountService = __importStar(require("../services/account.service"));
+const error_service_1 = require("../services/error.service");
 async function signup(req, res, next) {
     try {
-        const user = await authService.signupUser(req.body);
-        res.status(201).json({ user });
-    }
-    catch (err) {
-        next(err);
-    }
-}
-async function login(req, res, next) {
-    try {
-        const data = await authService.loginUser(req.body);
-        res.json(data);
-    }
-    catch (err) {
-        next(err);
-    }
-}
-async function logout(req, res, next) {
-    try {
-        await authService.logoutUser();
-        res.status(204).send();
+        const result = await authService.signupUser(req.body);
+        res.status(200).json(result);
     }
     catch (err) {
         next(err);
@@ -69,6 +53,21 @@ async function forgotPassword(req, res, next) {
     try {
         const data = await authService.sendPasswordReset(req.body.email);
         res.json({ success: true, data });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function me(req, res, next) {
+    try {
+        const user = await userService.getUserById(req.user.id);
+        if (!user) {
+            throw new error_service_1.AppError("User not found", "USER_NOT_FOUND", 404);
+        }
+        const account = user.accountId
+            ? await accountService.getAccountById(user.accountId)
+            : null;
+        res.json({ user, account });
     }
     catch (err) {
         next(err);

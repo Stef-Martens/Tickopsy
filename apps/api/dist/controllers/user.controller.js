@@ -38,6 +38,7 @@ exports.getUserById = getUserById;
 exports.updateUser = updateUser;
 exports.deleteUser = deleteUser;
 const userService = __importStar(require("../services/user.service"));
+const error_service_1 = require("../services/error.service");
 async function getUsers(req, res, next) {
     try {
         const users = await userService.getAllUsers();
@@ -50,6 +51,9 @@ async function getUsers(req, res, next) {
 async function getUserById(req, res, next) {
     try {
         const user = await userService.getUserById(req.params.id);
+        if (!user) {
+            throw new error_service_1.AppError("User not found", "USER_NOT_FOUND", 404);
+        }
         res.json(user);
     }
     catch (error) {
@@ -59,6 +63,9 @@ async function getUserById(req, res, next) {
 async function updateUser(req, res, next) {
     try {
         const user = await userService.updateUser(req.params.id, req.body);
+        if (!user) {
+            throw new error_service_1.AppError("User not found", "USER_NOT_FOUND", 404);
+        }
         res.json(user);
     }
     catch (error) {
@@ -67,7 +74,10 @@ async function updateUser(req, res, next) {
 }
 async function deleteUser(req, res, next) {
     try {
-        await userService.deleteUser(req.params.id);
+        const deleted = await userService.deleteUser(req.params.id);
+        if (!deleted) {
+            throw new error_service_1.AppError("User not found", "USER_NOT_FOUND", 404);
+        }
         res.status(204).send();
     }
     catch (error) {
