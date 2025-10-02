@@ -15,11 +15,11 @@ export const handleWebhook = async (req: Request, res: Response) => {
   try {
     // Stripe requires the raw body to verify signature
     const signature = req.headers["stripe-signature"]!;
-    event = stripe.webhooks.constructEvent(
-      req.body, // ✅ use req.body (Buffer from express.raw)
-      signature,
-      endpointSecret
-    );
+    if (!signature) {
+      return res.status(400).send("Missing Stripe signature header");
+    }
+    console.log("Stripe signature header found:", signature);
+    event = stripe.webhooks.constructEvent(req.body, signature, endpointSecret);
   } catch (err) {
     console.error("⚠️ Webhook signature verification failed.", err);
     return res.status(400).send(`Webhook Error: ${err}`);
@@ -34,17 +34,20 @@ export const handleWebhook = async (req: Request, res: Response) => {
       const subscriptionId = session.subscription as string;
       const email = session.customer_email;
 
+      const subscriptionValue: Stripe.Subscription =
+        await stripe.subscriptions.retrieve(subscriptionId);
+      const priceId = subscriptionValue.items.data[0].price.id;
+
+      console.log("session metadata:", session.metadata);
+
       try {
         // Your service updates the DB
         await authService.updateSubscription({
           customerId,
           subscriptionId,
           email: email ?? undefined,
+          priceId: priceId || "default",
           status: "active",
-          plan: session.metadata?.plan || "default",
-          expiresAt: session.expires_at
-            ? new Date(session.expires_at * 1000)
-            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // fallback: 30 days from now
         });
       } catch (err) {
         console.error("Failed to update subscription:", err);
@@ -60,6 +63,22 @@ export const handleWebhook = async (req: Request, res: Response) => {
     case "customer.subscription.updated":
       const subscription = event.data.object as Stripe.Subscription;
       console.log("📅 Subscription updated:", subscription.id);
+      // TODO: update subscription info in DB
+      break;
+
+    case "customer.subscription.deleted":
+      const deletedSubscription = event.data.object as Stripe.Subscription;
+      const deletedSubscriptionId = deletedSubscription.id;
+      const deletedCustomerId = deletedSubscription.customer as string;
+
+      await authService.updateSubscription({
+        customerId: deletedCustomerId,
+        subscriptionId: deletedSubscriptionId,
+        status: "canceled",
+        priceId: deletedSubscription.items.data[0].price.id,
+        expiredAt: new Date(),
+      });
+
       // TODO: update subscription info in DB
       break;
 

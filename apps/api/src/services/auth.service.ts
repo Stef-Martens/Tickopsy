@@ -1,110 +1,107 @@
 import prisma from "@stef_martens/database-tickopsy";
 import { supabase } from "../lib/supabase";
+import { AppError } from "./error.service";
 
-export async function signupUser({
-  name,
-  email,
-  password,
-  role = "user",
-}: {
-  name: string;
-  email: string;
-  password: string;
-  role?: string;
-}) {
-  if (!email || !password || !name) {
-    throw new Error("Name, email, and password are required");
+export class SignupError extends Error {
+  code: string;
+  constructor(message: string, code: string) {
+    super(message);
+    this.code = code;
   }
-  if (password.length < 6) {
-    throw new Error("Password must be at least 6 characters");
-  }
+}
 
-  // Check if user already exists in Prisma
-  const existingUser = await prisma.user.findFirst({
-    where: { email },
-  });
-
-  if (existingUser) {
-    return {
-      status: "error",
-      message: "User already exists",
-    };
-  }
-
-  // Create user in Supabase auth
-  const { data: authUser, error } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-
-  if (error) {
-    if (error.message.includes("already registered")) {
-      return {
-        status: "error",
-        message: "Email is already registered",
-      };
+type UpsertUserArgs =
+  | {
+      email: string;
+      name: string;
+      password: string;
+      role?: string;
+      provider?: undefined;
+      accessToken?: undefined;
     }
-    throw new Error(error.message);
+  | {
+      email: string;
+      name: string;
+      provider: string;
+      accessToken: string;
+      role?: string;
+      password?: undefined;
+    };
+
+export async function signupUser(args: UpsertUserArgs) {
+  const { email, name, role = "ADMIN" } = args;
+
+  if (!email || !name) {
+    throw new Error("Email and name are required");
   }
 
-  // Create account in Prisma
-  const account = await prisma.account.create({
-    data: {
-      name: `${name}'s Account`,
+  // --- 1. Resolve Supabase auth user ---
+  let authUserId: string | null = null;
+
+  if ("password" in args && args.password) {
+    // Email/password signup
+    const { data: authUser, error } = await supabase.auth.admin.createUser({
       email,
-      phone: "",
-    },
+      password: args.password,
+      email_confirm: true,
+    });
+
+    if (error) {
+      if (error.message.includes("already registered")) {
+        // Fetch existing Supabase user
+        const { data: users } = await supabase.auth.admin.listUsers();
+        const existing = users.users.find((u) => u.email === email);
+        if (!existing) throw new Error("Supabase user not found");
+        authUserId = existing.id;
+      } else {
+        throw new Error(`Supabase error: ${error.message}`);
+      }
+    } else {
+      authUserId = authUser.user.id;
+    }
+  } else if ("provider" in args && args.provider) {
+    // Social login (Google, etc.)
+    const { data: users, error } = await supabase.auth.admin.listUsers();
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    const existing = users.users.find((u) => u.email === email);
+    if (!existing) {
+      throw new Error("Supabase user not found for social login");
+    }
+    authUserId = existing.id;
+  }
+
+  if (!authUserId) {
+    throw new Error("Could not resolve Supabase auth user ID");
+  }
+
+  // --- 2. Check if app user already exists (by authId) ---
+  let user = await prisma.user.findFirst({ where: { authId: authUserId } });
+  let account = null;
+
+  if (user) {
+    account = await prisma.account.findUnique({
+      where: { id: user.accountId },
+    });
+    return { status: "exists", user, account };
+  }
+
+  // --- 3. Create account ---
+  account = await prisma.account.create({
+    data: { name: `${name}'s Account`, email, phone: "", hasAccess: false },
   });
 
-  // Create user in Prisma linked to the account
-  const newUser = await prisma.user.create({
+  // --- 4. Create app user ---
+  user = await prisma.user.create({
     data: {
-      authId: authUser.user.id, // Supabase auth user ID
-      accountId: account.id, // Link to the created account
+      authId: authUserId,
+      accountId: account.id,
       name,
       email,
       role,
     },
   });
 
-  return {
-    status: "success",
-    user: newUser,
-    account,
-  };
-}
-
-export async function loginUser({
-  email,
-  password,
-}: {
-  email: string;
-  password: string;
-}) {
-  if (!email || !password) {
-    throw new Error("Email and password are required");
-  }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    if (error.message.includes("Invalid login credentials")) {
-      throw new Error("Incorrect email or password");
-    }
-    throw new Error(error.message);
-  }
-
-  return data;
-}
-
-export async function logoutUser() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw new Error(error.message);
-  return true;
+  return { status: "created", user, account };
 }
 
 export async function sendPasswordReset(email: string) {

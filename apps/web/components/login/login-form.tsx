@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login as loginAction } from "@/lib/auth-actions";
+import { login as loginAction } from "@/lib/api/auth-actions";
 import SignInWithGoogleButton from "./sign-in-with-google-button";
 
 export function LoginForm({
@@ -44,7 +44,8 @@ export function LoginForm({
     setErrors({});
 
     try {
-      const res = await loginAction({ email, password });
+      const formData = new FormData(e.currentTarget);
+      const res = await loginAction(formData);
 
       if (res.success) {
         window.location.href = "/dashboard"; // or wherever
@@ -73,10 +74,6 @@ export function LoginForm({
           <form onSubmit={handleSubmit}>
             <div className="grid gap-6">
               <div className="flex flex-col gap-4">
-                <Button variant="outline" className="w-full">
-                  {/* Apple Icon */}
-                  Login with Apple
-                </Button>
                 <SignInWithGoogleButton />
               </div>
 
