@@ -2,7 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const account_controller_1 = require("../controllers/account.controller");
+const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
+router.use(auth_1.requireAuth);
 router.get("/", account_controller_1.getAccounts);
 router.get("/:id", account_controller_1.getAccountById);
 router.post("/", account_controller_1.createAccount);

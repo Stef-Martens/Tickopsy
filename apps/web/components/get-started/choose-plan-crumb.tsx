@@ -37,7 +37,7 @@ export function ChoosePlanCrumb({ email }: ChoosePlanCrumbProps) {
     const url = plan.billing[billing]?.paymentUrl;
     if (url) {
       // get email from supabase session
-      window.location.href = url + "?prefilled_email=" + email;
+      globalThis.location.href = url + "?prefilled_email=" + email;
     }
   };
 
@@ -105,7 +105,7 @@ export function ChoosePlanCrumb({ email }: ChoosePlanCrumbProps) {
                     selected === plan.id && !isDisabled
                       ? "border-primary bg-primary/5"
                       : "border-border",
-                    isDisabled && "opacity-50 cursor-not-allowed"
+                    isDisabled && "opacity-50 cursor-not-allowed",
                   )}
                 >
                   <div className="flex justify-between items-center">

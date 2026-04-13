@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { forgotPassword } from "@/lib/auth-actions";
+import { forgotPassword } from "@/lib/api/auth-actions";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +46,7 @@ export function ForgotPassword() {
       const res: ForgotPasswordResponse = await forgotPassword({ email });
 
       if (res.success) {
-        window.location.href = "/forgot-password/success";
+        globalThis.location.href = "/forgot-password/success";
         return;
       }
 

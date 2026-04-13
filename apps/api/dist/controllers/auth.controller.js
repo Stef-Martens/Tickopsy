@@ -42,7 +42,22 @@ const accountService = __importStar(require("../services/account.service"));
 const error_service_1 = require("../services/error.service");
 async function signup(req, res, next) {
     try {
-        const result = await authService.signupUser(req.body);
+        const authHeader = req.headers.authorization;
+        if (authHeader?.startsWith("Bearer ")) {
+            const token = authHeader.slice("Bearer ".length).trim();
+            const result = await authService.provisionUserFromToken({
+                accessToken: token,
+                fallbackName: req.body?.name,
+            });
+            res.status(200).json(result);
+            return;
+        }
+        const result = await authService.signupUser({
+            email: req.body?.email,
+            name: req.body?.name ||
+                `${req.body?.["first-name"] || ""} ${req.body?.["last-name"] || ""}`.trim(),
+            password: req.body?.password,
+        });
         res.status(200).json(result);
     }
     catch (err) {

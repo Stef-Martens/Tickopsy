@@ -4,9 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllTickets = getAllTickets;
+exports.getTicketsByAccountId = getTicketsByAccountId;
+exports.getTicketByIdForAccount = getTicketByIdForAccount;
 exports.createTicket = createTicket;
-exports.updateTicket = updateTicket;
-exports.deleteTicket = deleteTicket;
+exports.updateTicketForAccount = updateTicketForAccount;
+exports.deleteTicketForAccount = deleteTicketForAccount;
 const database_tickopsy_1 = __importDefault(require("@stef_martens/database-tickopsy"));
 function getAllTickets() {
     return database_tickopsy_1.default.ticket.findMany({
@@ -17,6 +19,23 @@ function getAllTickets() {
             notifications: true,
             reminders: true,
         },
+    });
+}
+function getTicketsByAccountId(accountId) {
+    return database_tickopsy_1.default.ticket.findMany({
+        where: { accountId, deletedAt: null },
+        include: {
+            account: true,
+            customer: true,
+            creator: true,
+            notifications: true,
+            reminders: true,
+        },
+    });
+}
+function getTicketByIdForAccount(id, accountId) {
+    return database_tickopsy_1.default.ticket.findFirst({
+        where: { id, accountId, deletedAt: null },
     });
 }
 function createTicket(data) {
@@ -31,7 +50,13 @@ function createTicket(data) {
         },
     });
 }
-function updateTicket(id, data) {
+async function updateTicketForAccount(id, accountId, data) {
+    const existing = await database_tickopsy_1.default.ticket.findFirst({
+        where: { id, accountId, deletedAt: null },
+    });
+    if (!existing) {
+        return null;
+    }
     return database_tickopsy_1.default.ticket.update({
         where: { id },
         data: {
@@ -41,7 +66,13 @@ function updateTicket(id, data) {
         },
     });
 }
-function deleteTicket(id) {
+async function deleteTicketForAccount(id, accountId) {
+    const existing = await database_tickopsy_1.default.ticket.findFirst({
+        where: { id, accountId, deletedAt: null },
+    });
+    if (!existing) {
+        return null;
+    }
     return database_tickopsy_1.default.ticket.update({
         where: { id },
         data: { deletedAt: new Date() },

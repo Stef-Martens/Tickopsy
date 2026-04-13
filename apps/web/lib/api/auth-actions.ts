@@ -22,16 +22,23 @@ export async function login(formData: FormData) {
   return { success: true, data };
 }
 
-export async function signup(formData: FormData) {
+export async function signup(formData: FormData, accessToken?: string) {
+  const firstName = formData.get("first-name")?.toString()?.trim() || "";
+  const lastName = formData.get("last-name")?.toString()?.trim() || "";
+  const explicitName = formData.get("name")?.toString()?.trim() || "";
+
+  const name = explicitName || `${firstName} ${lastName}`.trim();
+
   return apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/signup`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: JSON.stringify({
-      name: `${formData.get("first-name")} ${formData.get("last-name")}`,
+      name,
       email: formData.get("email"),
       password: formData.get("password"),
-      provider: formData.get("provider"),
-      accessToken: formData.get("accessToken"),
     }),
   });
 }
@@ -76,12 +83,33 @@ export async function forgotPassword({ email }: { email: string }) {
 export const me = cache(async () => {
   const supabase = createClient();
   const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return {
+      success: false,
+      error: "Not authenticated",
+      errorCode: "UNAUTHENTICATED",
+    };
+  }
+
+  const {
     data: { session },
   } = await supabase.auth.getSession();
 
+  if (!session?.access_token) {
+    return {
+      success: false,
+      error: "Missing session token",
+      errorCode: "UNAUTHENTICATED",
+    };
+  }
+
   return apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
     headers: {
-      Authorization: `Bearer ${session?.access_token}`,
+      Authorization: `Bearer ${session.access_token}`,
     },
     next: { revalidate: 60 },
   });

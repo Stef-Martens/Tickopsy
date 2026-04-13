@@ -12,6 +12,25 @@ export function getAllTickets() {
   });
 }
 
+export function getTicketsByAccountId(accountId: string) {
+  return prisma.ticket.findMany({
+    where: { accountId, deletedAt: null },
+    include: {
+      account: true,
+      customer: true,
+      creator: true,
+      notifications: true,
+      reminders: true,
+    },
+  });
+}
+
+export function getTicketByIdForAccount(id: string, accountId: string) {
+  return prisma.ticket.findFirst({
+    where: { id, accountId, deletedAt: null },
+  });
+}
+
 export function createTicket(data: {
   accountId: string;
   createdById: string;
@@ -32,14 +51,23 @@ export function createTicket(data: {
   });
 }
 
-export function updateTicket(
+export async function updateTicketForAccount(
   id: string,
+  accountId: string,
   data: Partial<{
     description: string;
     status: string;
     dueDate: string;
-  }>
+  }>,
 ) {
+  const existing = await prisma.ticket.findFirst({
+    where: { id, accountId, deletedAt: null },
+  });
+
+  if (!existing) {
+    return null;
+  }
+
   return prisma.ticket.update({
     where: { id },
     data: {
@@ -50,7 +78,15 @@ export function updateTicket(
   });
 }
 
-export function deleteTicket(id: string) {
+export async function deleteTicketForAccount(id: string, accountId: string) {
+  const existing = await prisma.ticket.findFirst({
+    where: { id, accountId, deletedAt: null },
+  });
+
+  if (!existing) {
+    return null;
+  }
+
   return prisma.ticket.update({
     where: { id },
     data: { deletedAt: new Date() },

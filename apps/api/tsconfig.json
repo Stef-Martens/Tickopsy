@@ -7,9 +7,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
-    "baseUrl": ".",
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src"]
 }

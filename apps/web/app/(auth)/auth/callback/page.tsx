@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { apiFetch } from "@/lib/api/api";
-import { signup } from "@/lib/auth-actions";
+import { signup } from "@/lib/api/auth-actions";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -21,21 +20,21 @@ export default function AuthCallbackPage() {
         return;
       }
 
-      // Get Google profile info from Supabase session
-      const { email, user_metadata } = session.user;
+      const { user_metadata, email } = session.user;
       const name =
-        user_metadata?.full_name ??
-        `${user_metadata?.first_name ?? ""} ${user_metadata?.last_name ?? ""}`;
+        user_metadata?.full_name ||
+        `${user_metadata?.first_name ?? ""} ${user_metadata?.last_name ?? ""}`.trim() ||
+        (email ? email.split("@")[0] : "User");
 
       const formData = new FormData();
-      formData.append("email", email);
       formData.append("name", name);
-      formData.append("provider", "google");
-      formData.append("accessToken", session.access_token);
 
-      await signup(formData);
+      const result = await signup(formData, session.access_token);
+      if (!result.success) {
+        router.push("/error");
+        return;
+      }
 
-      // Now user is guaranteed to exist in backend
       router.push("/dashboard");
     }
 

@@ -5,9 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SignupError = void 0;
 exports.signupUser = signupUser;
+exports.provisionUserFromToken = provisionUserFromToken;
 exports.sendPasswordReset = sendPasswordReset;
 const database_tickopsy_1 = __importDefault(require("@stef_martens/database-tickopsy"));
 const supabase_1 = require("../lib/supabase");
+const error_service_1 = require("./error.service");
 class SignupError extends Error {
     constructor(message, code) {
         super(message);
@@ -15,52 +17,8 @@ class SignupError extends Error {
     }
 }
 exports.SignupError = SignupError;
-async function signupUser(args) {
-    const { email, name, role = "ADMIN" } = args;
-    if (!email || !name) {
-        throw new Error("Email and name are required");
-    }
-    // --- 1. Resolve Supabase auth user ---
-    let authUserId = null;
-    if ("password" in args && args.password) {
-        // Email/password signup
-        const { data: authUser, error } = await supabase_1.supabase.auth.admin.createUser({
-            email,
-            password: args.password,
-            email_confirm: true,
-        });
-        if (error) {
-            if (error.message.includes("already registered")) {
-                // Fetch existing Supabase user
-                const { data: users } = await supabase_1.supabase.auth.admin.listUsers();
-                const existing = users.users.find((u) => u.email === email);
-                if (!existing)
-                    throw new Error("Supabase user not found");
-                authUserId = existing.id;
-            }
-            else {
-                throw new Error(`Supabase error: ${error.message}`);
-            }
-        }
-        else {
-            authUserId = authUser.user.id;
-        }
-    }
-    else if ("provider" in args && args.provider) {
-        // Social login (Google, etc.)
-        const { data: users, error } = await supabase_1.supabase.auth.admin.listUsers();
-        if (error)
-            throw new Error(`Supabase error: ${error.message}`);
-        const existing = users.users.find((u) => u.email === email);
-        if (!existing) {
-            throw new Error("Supabase user not found for social login");
-        }
-        authUserId = existing.id;
-    }
-    if (!authUserId) {
-        throw new Error("Could not resolve Supabase auth user ID");
-    }
-    // --- 2. Check if app user already exists (by authId) ---
+async function getOrCreateAppUser(params) {
+    const { authUserId, email, name, role = "USER" } = params;
     let user = await database_tickopsy_1.default.user.findFirst({ where: { authId: authUserId } });
     let account = null;
     if (user) {
@@ -69,11 +27,9 @@ async function signupUser(args) {
         });
         return { status: "exists", user, account };
     }
-    // --- 3. Create account ---
     account = await database_tickopsy_1.default.account.create({
         data: { name: `${name}'s Account`, email, phone: "", hasAccess: false },
     });
-    // --- 4. Create app user ---
     user = await database_tickopsy_1.default.user.create({
         data: {
             authId: authUserId,
@@ -84,6 +40,67 @@ async function signupUser(args) {
         },
     });
     return { status: "created", user, account };
+}
+async function signupUser(args) {
+    const { email, name, password } = args;
+    if (!email || !name || !password) {
+        throw new error_service_1.AppError("Email, name and password are required", "INVALID_SIGNUP_INPUT", 400);
+    }
+    let authUserId = null;
+    const { data: authUser, error } = await supabase_1.supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+    });
+    if (error) {
+        if (error.message.includes("already registered")) {
+            const { data: users } = await supabase_1.supabase.auth.admin.listUsers();
+            const existing = users.users.find((u) => u.email === email);
+            if (!existing) {
+                throw new error_service_1.AppError("Supabase user not found", "SUPABASE_USER_NOT_FOUND", 404);
+            }
+            authUserId = existing.id;
+        }
+        else {
+            throw new error_service_1.AppError(error.message, "SUPABASE_AUTH_ERROR", 400);
+        }
+    }
+    else {
+        authUserId = authUser.user.id;
+    }
+    if (!authUserId) {
+        throw new error_service_1.AppError("Could not resolve Supabase auth user ID", "SUPABASE_AUTH_ERROR", 500);
+    }
+    return getOrCreateAppUser({
+        authUserId,
+        email,
+        name,
+        role: "USER",
+    });
+}
+async function provisionUserFromToken(args) {
+    const { accessToken, fallbackName } = args;
+    if (!accessToken) {
+        throw new error_service_1.AppError("Missing access token", "UNAUTHORIZED", 401);
+    }
+    const { data: { user }, error, } = await supabase_1.supabase.auth.getUser(accessToken);
+    if (error || !user) {
+        throw new error_service_1.AppError("Invalid or expired token", "UNAUTHORIZED", 401);
+    }
+    const email = user.email;
+    const name = user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        fallbackName ||
+        (email ? email.split("@")[0] : "User");
+    if (!email) {
+        throw new error_service_1.AppError("User email is missing", "INVALID_USER_DATA", 400);
+    }
+    return getOrCreateAppUser({
+        authUserId: user.id,
+        email,
+        name,
+        role: "USER",
+    });
 }
 async function sendPasswordReset(email) {
     if (!email) {

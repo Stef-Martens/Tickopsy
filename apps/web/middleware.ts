@@ -1,35 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateSession } from "./utils/supabase/middleware";
 
-const allowedPaths = [
+const publicPaths = [
   "/",
-  "/dashboard",
-  "/get-started",
-  "/about",
   "/login",
   "/forgot-password",
-  "/auth/callback(\\?.*)?",
-  "/contact",
-  "/api/(.*)",
-  "/_next/(.*)",
-  "/favicon.ico",
-  "/.*\\.(svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?)$",
+  "/get-started",
+  "/auth/callback",
 ];
+const protectedPrefixes = ["/dashboard"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isAllowed = allowedPaths.some((pattern) =>
-    new RegExp(`^${pattern}$`).test(pathname)
-  );
+  const { response, user } = await updateSession(request);
 
-  if (!isAllowed) {
-    return new NextResponse("Forbidden", { status: 403 });
+  if (
+    publicPaths.some(
+      (path) => pathname === path || pathname.startsWith(`${path}/`),
+    )
+  ) {
+    return response;
   }
 
-  return await updateSession(request);
+  const needsAuth = protectedPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+
+  if (needsAuth && !user) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return response;
 }
 
 export const config = {
-  matcher: ["/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?)$).*)",
+  ],
 };

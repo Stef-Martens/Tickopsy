@@ -35,7 +35,9 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const userController = __importStar(require("../controllers/user.controller"));
+const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
+router.use(auth_1.requireAuth);
 router.get("/", userController.getUsers);
 router.get("/:id", userController.getUserById);
 router.patch("/:id", userController.updateUser);

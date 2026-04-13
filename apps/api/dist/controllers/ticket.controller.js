@@ -38,9 +38,10 @@ exports.createTicket = createTicket;
 exports.updateTicket = updateTicket;
 exports.deleteTicket = deleteTicket;
 const ticketService = __importStar(require("../services/ticket.service"));
+const error_service_1 = require("../services/error.service");
 async function getTickets(req, res, next) {
     try {
-        const tickets = await ticketService.getAllTickets();
+        const tickets = await ticketService.getTicketsByAccountId(req.user.accountId);
         res.json(tickets);
     }
     catch (error) {
@@ -49,7 +50,14 @@ async function getTickets(req, res, next) {
 }
 async function createTicket(req, res, next) {
     try {
-        const ticket = await ticketService.createTicket(req.body);
+        const ticket = await ticketService.createTicket({
+            accountId: req.user.accountId,
+            createdById: req.user.id,
+            customerId: req.body?.customerId,
+            description: req.body?.description,
+            status: req.body?.status,
+            dueDate: req.body?.dueDate,
+        });
         res.status(201).json(ticket);
     }
     catch (error) {
@@ -58,7 +66,10 @@ async function createTicket(req, res, next) {
 }
 async function updateTicket(req, res, next) {
     try {
-        const ticket = await ticketService.updateTicket(req.params.id, req.body);
+        const ticket = await ticketService.updateTicketForAccount(req.params.id, req.user.accountId, req.body);
+        if (!ticket) {
+            throw new error_service_1.AppError("Ticket not found", "TICKET_NOT_FOUND", 404);
+        }
         res.json(ticket);
     }
     catch (error) {
@@ -67,7 +78,10 @@ async function updateTicket(req, res, next) {
 }
 async function deleteTicket(req, res, next) {
     try {
-        await ticketService.deleteTicket(req.params.id);
+        const deleted = await ticketService.deleteTicketForAccount(req.params.id, req.user.accountId);
+        if (!deleted) {
+            throw new error_service_1.AppError("Ticket not found", "TICKET_NOT_FOUND", 404);
+        }
         res.status(204).send();
     }
     catch (error) {

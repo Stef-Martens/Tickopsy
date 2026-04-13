@@ -6,8 +6,11 @@ import {
   updateAccount,
   deleteAccount,
 } from "../controllers/account.controller";
+import { requireAuth } from "../middleware/auth";
 
 const router = Router();
+
+router.use(requireAuth);
 
 router.get("/", getAccounts);
 router.get("/:id", getAccountById);

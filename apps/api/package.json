@@ -12,7 +12,6 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@stef_martens/database-tickopsy": "^1.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.2.1",

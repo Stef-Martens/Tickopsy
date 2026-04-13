@@ -48,7 +48,7 @@ export function LoginForm({
       const res = await loginAction(formData);
 
       if (res.success) {
-        window.location.href = "/dashboard"; // or wherever
+        globalThis.location.href = "/dashboard"; // or wherever
         return;
       }
 

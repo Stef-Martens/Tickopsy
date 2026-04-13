@@ -1,172 +1,133 @@
-```markdown
 # Tickopsy
 
-A modern full-stack web application built with **Turborepo** for scalable monorepo management.
+A full-stack monorepo using Turborepo.
 
-- **Frontend** — [Next.js](https://nextjs.org) app deployed on [Vercel](https://vercel.com)
-- **Backend API** — [Express](https://expressjs.com/) + TypeScript deployed on [Railway](https://railway.app)
-- **Database** — [Supabase](https://supabase.com) (PostgreSQL)
-- **CI/CD** — Automated deployments via GitHub Actions
+- Frontend: Next.js app in apps/web (Vercel)
+- Backend: Express + TypeScript app in apps/api (Railway)
+- Database/Auth: Supabase Postgres + Supabase Auth
+- ORM: Prisma in packages/database
 
----
+## Monorepo Structure
 
-some random commands for during dev:
-npm run db:migrate:dev -- --name [name]
-stripe listen --forward-to localhost:4000/api/stripe/webhook
-
-## 📂 Monorepo Structure
-```
-
+```text
 .
 ├── apps
-│ ├── frontend # Next.js frontend app (Vercel)
-│ └── api # Express backend API (Railway)
-│
+│   ├── web
+│   └── api
 ├── packages
-│ ├── database # Prisma schema & client for Supabase
-│ └── config # Shared config/utilities
-│
-├── turbo.json # Turborepo configuration
-└── package.json # Root workspace config
+│   ├── database
+│   ├── config-eslint
+│   └── config-typescript
+├── docker-compose.yml
+├── turbo.json
+└── package.json
+```
 
-````
+## Prerequisites
 
----
+- Node.js >= 18
+- Docker (for local Postgres)
+- [Stripe CLI](https://stripe.com/docs/stripe-cli) (for webhook testing)
 
-## 🚀 Deployment Overview
+## Quick Start
 
-### **Frontend** — Vercel
-- Deployed from `apps/frontend`
-- Uses `NEXT_PUBLIC_` environment variables for public API & Supabase access
-- Auto-builds on push to `main`
-
-### **Backend** — Railway
-- Deployed from `apps/api`
-- Uses shared `packages/database` Prisma client
-- Environment variables set in Railway dashboard
-
-### **Database** — Supabase
-- PostgreSQL managed by Supabase
-- Schema defined in `packages/database`
-
----
-
-## 🛠️ Development
-
-### 1️⃣ Install dependencies
 ```bash
+# 1. Install dependencies
 npm install
-````
 
-### 2️⃣ Start all apps in dev mode
+# 2. Copy env templates and fill in your values
+cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
 
-```bash
+# 3. Start local Postgres + API + Web + Stripe listener
 npm run dev
 ```
 
-### 3️⃣ Start a specific app
+On first run the DB will be empty. To seed it:
 
 ```bash
-npm run dev --filter=frontend
+npm run db:push    # push Prisma schema to the local DB
+npm run db:seed    # populate with demo data
+```
+
+Or use the one-shot fresh start:
+
+```bash
+npm run dev:fresh   # wipes DB, re-pushes schema, seeds, then starts everything
+```
+
+## Scripts
+
+| Command                                   | What it does                                            |
+| ----------------------------------------- | ------------------------------------------------------- |
+| `npm run dev`                             | Starts Postgres container + API + Web + Stripe listener |
+| `npm run dev:fresh`                       | Wipes DB, pushes schema, seeds, then starts everything  |
+| `npm run db:up`                           | Start local Postgres container                          |
+| `npm run db:down`                         | Stop containers                                         |
+| `npm run db:reset`                        | Destroy volume, restart Postgres, push schema           |
+| `npm run db:seed`                         | Seed database with demo data                            |
+| `npm run db:push`                         | Push Prisma schema to local DB                          |
+| `npm run db:migrate:dev -- --name <name>` | Create a new migration                                  |
+| `npm run db:migrate:deploy`               | Apply pending migrations                                |
+| `npm run generate`                        | Regenerate Prisma client                                |
+
+Start individual apps:
+
+```bash
+npm run dev --filter=web
 npm run dev --filter=api
 ```
 
----
+### pgAdmin
 
-## ⚙️ Environment Variables
+Connect to the local database with:
 
-### **Shared**
+- Host: `localhost`
+- Port: `5432`
+- User: `tickopsy`
+- Password: `tickopsy`
+- Database: `tickopsy`
 
+## Environment Variables
+
+### Root / Database (.env)
+
+```env
+DATABASE_URL=postgresql://tickopsy:tickopsy@localhost:5432/tickopsy
+DIRECT_URL=postgresql://tickopsy:tickopsy@localhost:5432/tickopsy
 ```
-DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/<dbname>
-```
 
-### **Frontend (Vercel)**
+### Frontend — apps/web/.env.local
 
-```
-NEXT_PUBLIC_API_URL=https://<your-backend>.railway.app
-NEXT_PUBLIC_SUPABASE_URL=https://<your-ref>.supabase.co
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+NEXT_PUBLIC_API_URL=http://localhost:4000/api
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-### **Backend (Railway)**
+### Backend — apps/api/.env
 
-```
+```env
 PORT=4000
-DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/<dbname>
-SUPABASE_SERVICE_KEY=<service-role-key>
+DATABASE_URL=postgresql://tickopsy:tickopsy@localhost:5432/tickopsy
+DIRECT_URL=postgresql://tickopsy:tickopsy@localhost:5432/tickopsy
+SUPABASE_URL=https://<your-project>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+FRONTEND_ORIGINS=http://localhost:3000
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+RESET_PASSWORD_REDIRECT_URL=http://localhost:3000/reset-password
 ```
 
----
+### Production (Vercel / Railway)
 
-## 🔄 GitHub Actions CI/CD
+Same Supabase project. Point `DATABASE_URL` / `DIRECT_URL` at your hosted Postgres (Supabase pooler or Railway) instead of localhost. Update `FRONTEND_ORIGINS` and `RESET_PASSWORD_REDIRECT_URL` to your production domain.
 
-Example `.github/workflows/deploy.yml`:
+## Notes
 
-```yaml
-name: Deploy
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm install
-      - run: npm run build --filter=api
-      - run: npx railway up --service=api --environment=production
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: amondnet/vercel-action@v20
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: apps/frontend
-```
-
----
-
-## 🗄️ Database Commands
-
-```bash
-npm run db:push       # Push schema to Supabase
-npm run db:migrate    # Apply migrations
-npm run db:studio     # Open Prisma Studio
-```
-
----
-
-## 📦 Tech Stack
-
-- **Monorepo** — Turborepo
-- **Frontend** — Next.js + TypeScript
-- **Backend** — Express + TypeScript
-- **Database** — Supabase (PostgreSQL) + Prisma
-- **Hosting** — Vercel (frontend), Railway (backend)
-- **CI/CD** — GitHub Actions
-
----
-
-## 💡 Notes
-
-- `packages/database` is the single source of truth for DB schema.
-- Run migrations before deploying backend changes.
-- Set all `.env` variables in hosting dashboards.
-- GitHub secrets store API tokens for deployment automation.
-
-```
-
-Do you want me to also include **a simple architecture diagram** in the README so people instantly see how Vercel, Railway, and Supabase connect? That would make it more visual.
-```
+- `packages/database` is the source of truth for Prisma schema and generated client.
+- Keep Supabase service role key only on backend services.
+- Configure `FRONTEND_ORIGINS` on the API to restrict CORS in production.
+- The local Postgres container stores data in a Docker volume (`pgdata`). Use `npm run db:reset` to wipe it.

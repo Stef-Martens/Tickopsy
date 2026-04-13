@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Progress } from "../ui/progress";
 
 export default function OnboardingSuccess() {
   const router = useRouter();

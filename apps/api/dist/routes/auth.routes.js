@@ -36,9 +36,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const authController = __importStar(require("../controllers/auth.controller"));
 const auth_1 = require("../middleware/auth");
+const rateLimit_1 = require("../middleware/rateLimit");
 const router = (0, express_1.Router)();
-// Public auth routes
-router.post("/signup", authController.signup);
+router.post("/signup", (0, rateLimit_1.rateLimit)({ windowMs: 60000, max: 10 }), authController.signup);
 router.get("/me", auth_1.requireAuth, authController.me);
-router.post("/forgot-password", authController.forgotPassword);
+router.post("/forgot-password", (0, rateLimit_1.rateLimit)({ windowMs: 60000, max: 5 }), authController.forgotPassword);
 exports.default = router;

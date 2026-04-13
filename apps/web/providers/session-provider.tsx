@@ -28,7 +28,7 @@ export function SessionProvider({
 
   const logout = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/login"; // redirect after logout
+    globalThis.location.href = "/login"; // redirect after logout
   };
 
   return (

@@ -42,8 +42,8 @@ const accountService = __importStar(require("../services/account.service"));
 const error_service_1 = require("../services/error.service");
 async function getAccounts(req, res, next) {
     try {
-        const accounts = await accountService.getAllAccounts();
-        res.json(accounts);
+        const account = await accountService.getAccountById(req.user.accountId);
+        res.json(account ? [account] : []);
     }
     catch (error) {
         next(error);
@@ -51,6 +51,9 @@ async function getAccounts(req, res, next) {
 }
 async function getAccountById(req, res, next) {
     try {
+        if (req.params.id !== req.user.accountId) {
+            throw new error_service_1.AppError("Forbidden", "FORBIDDEN", 403);
+        }
         const account = await accountService.getAccountById(req.params.id);
         if (!account) {
             throw new error_service_1.AppError("Account not found", "ACCOUNT_NOT_FOUND", 404);
@@ -63,8 +66,7 @@ async function getAccountById(req, res, next) {
 }
 async function createAccount(req, res, next) {
     try {
-        const account = await accountService.createAccount(req.body);
-        res.status(201).json(account);
+        throw new error_service_1.AppError("Account creation is handled during signup", "ACCOUNT_CREATE_NOT_ALLOWED", 403);
     }
     catch (error) {
         next(error);
@@ -72,7 +74,7 @@ async function createAccount(req, res, next) {
 }
 async function updateAccount(req, res, next) {
     try {
-        const account = await accountService.updateAccount(req.params.id, req.body);
+        const account = await accountService.updateAccountForUser(req.params.id, req.user.accountId, req.body);
         if (!account) {
             throw new error_service_1.AppError("Account not found", "ACCOUNT_NOT_FOUND", 404);
         }
@@ -84,7 +86,7 @@ async function updateAccount(req, res, next) {
 }
 async function deleteAccount(req, res, next) {
     try {
-        const deleted = await accountService.deleteAccount(req.params.id);
+        const deleted = await accountService.deleteAccountForUser(req.params.id, req.user.accountId);
         if (!deleted) {
             throw new error_service_1.AppError("Account not found", "ACCOUNT_NOT_FOUND", 404);
         }

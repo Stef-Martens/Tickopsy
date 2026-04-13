@@ -6,7 +6,7 @@ import { cn } from "@/utils/utils";
 
 interface BillingToggleProps {
   value: "monthly" | "yearly";
-  onChange: (value: "monthly" | "yearly") => void;
+  onChange: (...args: ["monthly" | "yearly"]) => void;
 }
 
 export function BillingToggle({ value, onChange }: BillingToggleProps) {
@@ -47,7 +47,7 @@ function BillingOption({
       <label
         htmlFor={value}
         className={cn(
-          "flex h-full cursor-pointer items-center justify-center px-7 font-semibold text-sm text-muted-foreground peer-data-[state=checked]:text-primary"
+          "flex h-full cursor-pointer items-center justify-center px-7 font-semibold text-sm text-muted-foreground peer-data-[state=checked]:text-primary",
         )}
       >
         {label}

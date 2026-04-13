@@ -1,19 +1,25 @@
 import { Request, Response, NextFunction } from "express";
-import { createClient } from "@supabase/supabase-js";
 import prisma from "@stef_martens/database-tickopsy";
 import { supabase } from "../lib/supabase";
 
 export async function requireAuth(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader)
-      return res.status(401).json({ error: "Missing Authorization header" });
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res
+        .status(401)
+        .json({ error: "Missing or invalid Authorization header" });
+    }
 
-    const token = authHeader.replace("Bearer ", "");
+    const token = authHeader.slice("Bearer ".length).trim();
+    if (!token) {
+      return res.status(401).json({ error: "Missing bearer token" });
+    }
+
     const {
       data: { user },
       error,

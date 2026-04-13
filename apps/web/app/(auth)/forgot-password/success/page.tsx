@@ -29,7 +29,7 @@ const ForgotPasswordPageSucces = () => {
               <Button
                 type="submit"
                 className="w-full"
-                onClick={() => (window.location.href = "/login")}
+                onClick={() => (globalThis.location.href = "/login")}
               >
                 Back to Login
               </Button>
