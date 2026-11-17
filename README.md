@@ -1,172 +1,82 @@
-```markdown
 # Tickopsy
 
-A modern full-stack web application built with **Turborepo** for scalable monorepo management.
+A multi-tenant SaaS for small service businesses to manage **customers, repair/service tickets, to-dos and reminders**, with paid subscriptions through **Stripe**.
 
-- **Frontend** — [Next.js](https://nextjs.org) app deployed on [Vercel](https://vercel.com)
-- **Backend API** — [Express](https://expressjs.com/) + TypeScript deployed on [Railway](https://railway.app)
-- **Database** — [Supabase](https://supabase.com) (PostgreSQL)
-- **CI/CD** — Automated deployments via GitHub Actions
+Built as a **TypeScript monorepo** with Turborepo: a Next.js frontend, an Express REST API and a shared Prisma database package.
 
----
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-14-000000?logo=nextdotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)
+![Stripe](https://img.shields.io/badge/Stripe-635BFF?logo=stripe&logoColor=white)
+![Turborepo](https://img.shields.io/badge/Turborepo-EF4444?logo=turborepo&logoColor=white)
 
-some random commands for during dev:
-npm run db:migrate:dev -- --name [name]
-stripe listen --forward-to localhost:4000/api/stripe/webhook
+## Features
 
-## 📂 Monorepo Structure
+- **Authentication** with Supabase Auth: email/password, Google OAuth, email confirmation and password reset
+- **Onboarding flow**: sign up → choose a plan → Stripe Checkout → account activated
+- **Stripe subscriptions** handled through webhooks (`checkout.session.completed`, `customer.subscription.updated` / `deleted`, `invoice.payment_succeeded`), with signature verification on the raw request body
+- **Multi-tenant data model**: every customer, ticket, to-do and subscription belongs to an `Account`, and users belong to an account with a role
+- **Tickets** with status history, due dates, notifications and reminders
+- **Soft deletes** (`deletedAt`) on core entities
+
+## Architecture
+
+```
+apps/
+├── web/        Next.js (App Router) frontend: auth, onboarding, pricing, dashboard
+└── api/        Express + TypeScript REST API
+    └── src/
+        ├── routes/        Route definitions
+        ├── controllers/   HTTP layer
+        ├── services/      Business logic (accounts, tickets, subscriptions, …)
+        └── middleware/    Supabase JWT auth, central error handler
+packages/
+├── database/   Prisma schema, migrations and client, published as a private npm package
+├── config-eslint/
+└── config-typescript/
 ```
 
-.
-├── apps
-│ ├── frontend # Next.js frontend app (Vercel)
-│ └── api # Express backend API (Railway)
-│
-├── packages
-│ ├── database # Prisma schema & client for Supabase
-│ └── config # Shared config/utilities
-│
-├── turbo.json # Turborepo configuration
-└── package.json # Root workspace config
+- The **API** follows a routes → controllers → services structure. A `requireAuth` middleware verifies the Supabase access token and loads the matching app user.
+- The **database package** is the single source of truth for the schema. It's versioned and published, so the API deploys independently from the monorepo.
+- **CI/CD** (GitHub Actions): on push to `main`, the pipeline builds, version-bumps and publishes the database package to npm, then deploys the frontend to Vercel. The API is hosted on Railway.
 
-````
+## Tech stack
 
----
+| Layer     | Technology |
+|-----------|------------|
+| Frontend  | Next.js 14, React, TypeScript, Tailwind CSS, shadcn/ui |
+| Backend   | Node.js, Express 5, TypeScript |
+| Database  | PostgreSQL (Supabase), Prisma ORM |
+| Auth      | Supabase Auth (email + Google OAuth) |
+| Payments  | Stripe Checkout, Billing and webhooks |
+| Tooling   | Turborepo, ESLint, Prettier |
+| Hosting   | Vercel (web), Railway (API), Supabase (DB) |
 
-## 🚀 Deployment Overview
+## Running locally
 
-### **Frontend** — Vercel
-- Deployed from `apps/frontend`
-- Uses `NEXT_PUBLIC_` environment variables for public API & Supabase access
-- Auto-builds on push to `main`
+**Prerequisites:** Node 20+, a Supabase project (or local Postgres), and the Stripe CLI for webhooks.
 
-### **Backend** — Railway
-- Deployed from `apps/api`
-- Uses shared `packages/database` Prisma client
-- Environment variables set in Railway dashboard
-
-### **Database** — Supabase
-- PostgreSQL managed by Supabase
-- Schema defined in `packages/database`
-
----
-
-## 🛠️ Development
-
-### 1️⃣ Install dependencies
 ```bash
 npm install
-````
 
-### 2️⃣ Start all apps in dev mode
+# Environment variables: copy the examples and fill them in
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
+cp packages/database/.env.example packages/database/.env
 
-```bash
+# Database
+npm run generate                       # generate the Prisma client
+npm run db:migrate:dev                 # apply migrations
+
+# Run everything (web on :3000, API on :4000)
 npm run dev
+
+# Forward Stripe webhooks to the local API
+stripe listen --forward-to localhost:4000/api/stripe/webhook
 ```
 
-### 3️⃣ Start a specific app
+## Status
 
-```bash
-npm run dev --filter=frontend
-npm run dev --filter=api
-```
-
----
-
-## ⚙️ Environment Variables
-
-### **Shared**
-
-```
-DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/<dbname>
-```
-
-### **Frontend (Vercel)**
-
-```
-NEXT_PUBLIC_API_URL=https://<your-backend>.railway.app
-NEXT_PUBLIC_SUPABASE_URL=https://<your-ref>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-```
-
-### **Backend (Railway)**
-
-```
-PORT=4000
-DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/<dbname>
-SUPABASE_SERVICE_KEY=<service-role-key>
-```
-
----
-
-## 🔄 GitHub Actions CI/CD
-
-Example `.github/workflows/deploy.yml`:
-
-```yaml
-name: Deploy
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm install
-      - run: npm run build --filter=api
-      - run: npx railway up --service=api --environment=production
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: amondnet/vercel-action@v20
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: apps/frontend
-```
-
----
-
-## 🗄️ Database Commands
-
-```bash
-npm run db:push       # Push schema to Supabase
-npm run db:migrate    # Apply migrations
-npm run db:studio     # Open Prisma Studio
-```
-
----
-
-## 📦 Tech Stack
-
-- **Monorepo** — Turborepo
-- **Frontend** — Next.js + TypeScript
-- **Backend** — Express + TypeScript
-- **Database** — Supabase (PostgreSQL) + Prisma
-- **Hosting** — Vercel (frontend), Railway (backend)
-- **CI/CD** — GitHub Actions
-
----
-
-## 💡 Notes
-
-- `packages/database` is the single source of truth for DB schema.
-- Run migrations before deploying backend changes.
-- Set all `.env` variables in hosting dashboards.
-- GitHub secrets store API tokens for deployment automation.
-
-```
-
-Do you want me to also include **a simple architecture diagram** in the README so people instantly see how Vercel, Railway, and Supabase connect? That would make it more visual.
-```
+Work in progress. Auth, onboarding, subscriptions and the data model are in place; the ticket dashboard UI is being built.
